@@ -35,6 +35,18 @@ provider:
                 - 'DaysSinceEpochIndex'
         - Effect: "Allow"
           Action:
+            - "dynamodb:PutItem"
+            - "dynamodb:UpdateItem"
+            - "dynamodb:Query"
+          Resource:
+            - Fn::GetAtt: [ ValetDataTable, Arn ]
+            - !Join
+              - '/'
+              - - !GetAtt ValetDataTable.Arn
+                - 'index'
+                - 'DaysSinceEpochIndex'
+        - Effect: "Allow"
+          Action:
             - "sqs:SendMessage"
           Resource:
             - Fn::GetAtt: [ LprParseAndStoreCompletedQueue, Arn ]
@@ -49,7 +61,7 @@ provider:
                 - "/*"
   environment:
     LPR_DYNAMODB_TABLE: !Ref LprDataTable
-    VALET_DYNAMODB_TABLE: !Ref ValetRevenueTracking
+    VALET_DYNAMODB_TABLE: !Ref ValetDataTable
     IMAGE_BUCKET_NAME: !Ref LprImageBucket
     COMPLETED_QUEUE_URL: !Ref LprParseAndStoreCompletedQueue
 
@@ -129,7 +141,7 @@ resources:
         TimeToLiveSpecification:
           AttributeName: ttl
           Enabled: true
-    LprDataTable:
+    ValetDataTable:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ValetRevenueTracking
@@ -137,6 +149,10 @@ resources:
           - AttributeName: plate_read_id
             AttributeType: S
           - AttributeName: plate_read_timestamp
+            AttributeType: N
+          - AttributeName: days_since_epoch
+            AttributeType: N
+          - AttributeName: revenue_received
             AttributeType: N
         KeySchema:
           - AttributeName: plate_read_id

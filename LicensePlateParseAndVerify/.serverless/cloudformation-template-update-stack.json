@@ -135,6 +135,37 @@
                 {
                   "Effect": "Allow",
                   "Action": [
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:Query"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "ValetDataTable",
+                        "Arn"
+                      ]
+                    },
+                    {
+                      "Fn::Join": [
+                        "/",
+                        [
+                          {
+                            "Fn::GetAtt": [
+                              "ValetDataTable",
+                              "Arn"
+                            ]
+                          },
+                          "index",
+                          "DaysSinceEpochIndex"
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
                     "sqs:SendMessage"
                   ],
                   "Resource": [
@@ -213,7 +244,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
-          "S3Key": "serverless/lprparseandverify/dev/1754332137627-2025-08-04T18:28:57.627Z/lprparseandverify.zip"
+          "S3Key": "serverless/lprparseandverify/dev/1754349561137-2025-08-04T23:19:21.137Z/lprparseandverify.zip"
         },
         "Handler": "parsehandlers.receivelprdata",
         "Runtime": "python3.12",
@@ -222,8 +253,11 @@
         "Timeout": 6,
         "Environment": {
           "Variables": {
-            "DYNAMODB_TABLE": {
+            "LPR_DYNAMODB_TABLE": {
               "Ref": "LprDataTable"
+            },
+            "VALET_DYNAMODB_TABLE": {
+              "Ref": "ValetDataTable"
             },
             "IMAGE_BUCKET_NAME": {
               "Ref": "LprImageBucket"
@@ -249,7 +283,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
-          "S3Key": "serverless/lprparseandverify/dev/1754332137627-2025-08-04T18:28:57.627Z/lprparseandverify.zip"
+          "S3Key": "serverless/lprparseandverify/dev/1754349561137-2025-08-04T23:19:21.137Z/lprparseandverify.zip"
         },
         "Handler": "verifyhandlers.verifylprdata",
         "Runtime": "python3.12",
@@ -258,8 +292,11 @@
         "Timeout": 6,
         "Environment": {
           "Variables": {
-            "DYNAMODB_TABLE": {
+            "LPR_DYNAMODB_TABLE": {
               "Ref": "LprDataTable"
+            },
+            "VALET_DYNAMODB_TABLE": {
+              "Ref": "ValetDataTable"
             },
             "IMAGE_BUCKET_NAME": {
               "Ref": "LprImageBucket"
@@ -280,24 +317,24 @@
         "VerifylprdataLogGroup"
       ]
     },
-    "ProcesslprdataLambdaVersionajWBMJVzL0hMcIBTgVlckX7nIFGphfQRvmWDnJvQ0": {
+    "ProcesslprdataLambdaVersion7XGnRBl2s8dbHZ8dRJvlmuArLZdzzobVRDOLAEe3Q": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ProcesslprdataLambdaFunction"
         },
-        "CodeSha256": "SsGfqarvd6mAa5/2XsqI+l2nyv8m8Wj5VHBNxkxaspI="
+        "CodeSha256": "vsU+tysZL8lS4BJnT2liDL1D4d0R5e1D9UOTemWHVB4="
       }
     },
-    "VerifylprdataLambdaVersion1klTskH1ZqIS1HcoRyrUOu5YFgCfaio016NRF3yXc": {
+    "VerifylprdataLambdaVersiongfLhhdVIsUDQvW0I0EpMQ5I9TuGnaWYwC9mhkgpkM": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "VerifylprdataLambdaFunction"
         },
-        "CodeSha256": "SsGfqarvd6mAa5/2XsqI+l2nyv8m8Wj5VHBNxkxaspI="
+        "CodeSha256": "vsU+tysZL8lS4BJnT2liDL1D4d0R5e1D9UOTemWHVB4="
       }
     },
     "ProcesslprdataEventSourceMappingSQSLprProcessingQueue": {
@@ -435,6 +472,59 @@
         }
       }
     },
+    "ValetDataTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "ValetRevenueTracking",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "plate_read_id",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "plate_read_timestamp",
+            "AttributeType": "N"
+          },
+          {
+            "AttributeName": "days_since_epoch",
+            "AttributeType": "N"
+          },
+          {
+            "AttributeName": "revenue_received",
+            "AttributeType": "N"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "plate_read_id",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "plate_read_timestamp",
+            "KeyType": "RANGE"
+          }
+        ],
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "DaysSinceEpochIndex",
+            "KeySchema": [
+              {
+                "AttributeName": "days_since_epoch",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "revenue_received",
+                "KeyType": "RANGE"
+              }
+            ],
+            "Projection": {
+              "ProjectionType": "ALL"
+            }
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST"
+      }
+    },
     "LprImageBucket": {
       "Type": "AWS::S3::Bucket",
       "Properties": {
@@ -493,7 +583,7 @@
     "ProcesslprdataLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ProcesslprdataLambdaVersionajWBMJVzL0hMcIBTgVlckX7nIFGphfQRvmWDnJvQ0"
+        "Ref": "ProcesslprdataLambdaVersion7XGnRBl2s8dbHZ8dRJvlmuArLZdzzobVRDOLAEe3Q"
       },
       "Export": {
         "Name": "sls-lprparseandverify-dev-ProcesslprdataLambdaFunctionQualifiedArn"
@@ -502,7 +592,7 @@
     "VerifylprdataLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "VerifylprdataLambdaVersion1klTskH1ZqIS1HcoRyrUOu5YFgCfaio016NRF3yXc"
+        "Ref": "VerifylprdataLambdaVersiongfLhhdVIsUDQvW0I0EpMQ5I9TuGnaWYwC9mhkgpkM"
       },
       "Export": {
         "Name": "sls-lprparseandverify-dev-VerifylprdataLambdaFunctionQualifiedArn"

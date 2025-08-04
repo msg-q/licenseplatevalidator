@@ -201,8 +201,8 @@ def verifylprdata(event, context):
                             duration_hours = duration_ms / (1000 * 60 * 60)
                             
                             charge = 0
-                            if duration_hours % 24 > 0:
-                                charge = (duration_hours % 24) * 36
+                            if duration_hours > 24:
+                                charge = int(duration_hours / 24) * 36
                                 duration_hours = duration_hours % 24
 
                             # Calculate the charge based on valet rates.
