@@ -2,7 +2,7 @@
 org: pauleverton
 # "app" enables Serverless Framework Dashboard features and sharing them with other Services.
 app: licenseplatevalidator
-service: lprparseandstoreservice
+service: lprparseandverify
 
 provider:
   name: aws
@@ -54,6 +54,7 @@ provider:
 
 functions:
   processlprdata:
+    name: lpr-parse-and-store
     handler: parsehandlers.receivelprdata
     memorySize: 256
     events:
@@ -65,6 +66,7 @@ functions:
           batchSize: 1
 
   verifylprdata:
+    name: lpr-verify
     handler: verifyhandlers.verifylprdata
     memorySize: 256
     events:
@@ -108,6 +110,8 @@ resources:
             AttributeType: N
           - AttributeName: days_since_epoch
             AttributeType: N
+          - AttributeName: ttl
+            AttributeType: N
         KeySchema:
           - AttributeName: plate_read_id
             KeyType: HASH
@@ -123,6 +127,9 @@ resources:
             Projection:
               ProjectionType: ALL
         BillingMode: PAY_PER_REQUEST
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
     LprImageBucket:
       Type: AWS::S3::Bucket
       Properties:

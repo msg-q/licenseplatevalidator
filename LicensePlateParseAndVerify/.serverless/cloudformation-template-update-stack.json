@@ -8,6 +8,12 @@
         "LogGroupName": "/aws/lambda/lprparseandstoreservice-dev-processlprdata"
       }
     },
+    "VerifylprdataLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/lprparseandstoreservice-dev-verifylprdata"
+      }
+    },
     "IamRoleLambdaExecution": {
       "Type": "AWS::IAM::Role",
       "Properties": {
@@ -92,13 +98,30 @@
                 {
                   "Effect": "Allow",
                   "Action": [
-                    "dynamodb:PutItem"
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:Query"
                   ],
                   "Resource": [
                     {
                       "Fn::GetAtt": [
                         "LprDataTable",
                         "Arn"
+                      ]
+                    },
+                    {
+                      "Fn::Join": [
+                        "/",
+                        [
+                          {
+                            "Fn::GetAtt": [
+                              "LprDataTable",
+                              "Arn"
+                            ]
+                          },
+                          "index",
+                          "DaysSinceEpochIndex"
+                        ]
                       ]
                     }
                   ]
@@ -150,6 +173,12 @@
                         "LprProcessingQueue",
                         "Arn"
                       ]
+                    },
+                    {
+                      "Fn::GetAtt": [
+                        "LprParseAndStoreCompletedQueue",
+                        "Arn"
+                      ]
                     }
                   ]
                 }
@@ -178,9 +207,9 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
-          "S3Key": "serverless/lprparseandstoreservice/dev/1754317906831-2025-08-04T14:31:46.831Z/lprparseandstoreservice.zip"
+          "S3Key": "serverless/lprparseandstoreservice/dev/1754325297407-2025-08-04T16:34:57.407Z/lprparseandstoreservice.zip"
         },
-        "Handler": "handler.receivelprdata",
+        "Handler": "parsehandlers.receivelprdata",
         "Runtime": "python3.12",
         "FunctionName": "lprparseandstoreservice-dev-processlprdata",
         "MemorySize": 256,
@@ -209,14 +238,60 @@
         "ProcesslprdataLogGroup"
       ]
     },
-    "ProcesslprdataLambdaVersionXEEu41w3vOf0ie9GWCDzhgAglEW4Kf7iw755DAwc": {
+    "VerifylprdataLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
+          "S3Key": "serverless/lprparseandstoreservice/dev/1754325297407-2025-08-04T16:34:57.407Z/lprparseandstoreservice.zip"
+        },
+        "Handler": "verifyhandlers.verifylprdata",
+        "Runtime": "python3.12",
+        "FunctionName": "lprparseandstoreservice-dev-verifylprdata",
+        "MemorySize": 256,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "DYNAMODB_TABLE": {
+              "Ref": "LprDataTable"
+            },
+            "IMAGE_BUCKET_NAME": {
+              "Ref": "LprImageBucket"
+            },
+            "COMPLETED_QUEUE_URL": {
+              "Ref": "LprParseAndStoreCompletedQueue"
+            }
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "VerifylprdataLogGroup"
+      ]
+    },
+    "ProcesslprdataLambdaVersion2JH3i36csOq1ACuFS5nZ8q8E7I8fbCorVfcF1JFheA": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ProcesslprdataLambdaFunction"
         },
-        "CodeSha256": "BSFFVtZRDK3lZwWMF6GenLzlUiS9HGlZO7lPhMUUDPE="
+        "CodeSha256": "Urg9EyQ4NuwlTydv86uxFjJCWhUIYfS2RVJYrn/gLtg="
+      }
+    },
+    "VerifylprdataLambdaVersionOvk90eOajWWSckzsysTAhEA2Q6xblZqUmmvZro3U98": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "VerifylprdataLambdaFunction"
+        },
+        "CodeSha256": "Urg9EyQ4NuwlTydv86uxFjJCWhUIYfS2RVJYrn/gLtg="
       }
     },
     "ProcesslprdataEventSourceMappingSQSLprProcessingQueue": {
@@ -235,6 +310,28 @@
         "FunctionName": {
           "Fn::GetAtt": [
             "ProcesslprdataLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Enabled": true
+      }
+    },
+    "VerifylprdataEventSourceMappingSQSLprParseAndStoreCompletedQueue": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "DependsOn": [
+        "IamRoleLambdaExecution"
+      ],
+      "Properties": {
+        "BatchSize": 1,
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "LprParseAndStoreCompletedQueue",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "VerifylprdataLambdaFunction",
             "Arn"
           ]
         },
@@ -291,6 +388,10 @@
           {
             "AttributeName": "plate_read_timestamp",
             "AttributeType": "N"
+          },
+          {
+            "AttributeName": "days_since_epoch",
+            "AttributeType": "N"
           }
         ],
         "KeySchema": [
@@ -303,10 +404,25 @@
             "KeyType": "RANGE"
           }
         ],
-        "ProvisionedThroughput": {
-          "ReadCapacityUnits": 1,
-          "WriteCapacityUnits": 1
-        }
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "DaysSinceEpochIndex",
+            "KeySchema": [
+              {
+                "AttributeName": "days_since_epoch",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "plate_read_timestamp",
+                "KeyType": "RANGE"
+              }
+            ],
+            "Projection": {
+              "ProjectionType": "ALL"
+            }
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST"
       }
     },
     "LprImageBucket": {
@@ -367,10 +483,19 @@
     "ProcesslprdataLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ProcesslprdataLambdaVersionXEEu41w3vOf0ie9GWCDzhgAglEW4Kf7iw755DAwc"
+        "Ref": "ProcesslprdataLambdaVersion2JH3i36csOq1ACuFS5nZ8q8E7I8fbCorVfcF1JFheA"
       },
       "Export": {
         "Name": "sls-lprparseandstoreservice-dev-ProcesslprdataLambdaFunctionQualifiedArn"
+      }
+    },
+    "VerifylprdataLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "VerifylprdataLambdaVersionOvk90eOajWWSckzsysTAhEA2Q6xblZqUmmvZro3U98"
+      },
+      "Export": {
+        "Name": "sls-lprparseandstoreservice-dev-VerifylprdataLambdaFunctionQualifiedArn"
       }
     }
   }
