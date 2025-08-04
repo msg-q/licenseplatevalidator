@@ -28,6 +28,11 @@ provider:
             - "dynamodb:Query"
           Resource:
             - Fn::GetAtt: [ LprDataTable, Arn ]
+            - !Join
+              - '/'
+              - - !GetAtt LprDataTable.Arn
+                - 'index'
+                - 'DaysSinceEpochIndex'
         - Effect: "Allow"
           Action:
             - "sqs:SendMessage"
@@ -101,14 +106,23 @@ resources:
             AttributeType: S
           - AttributeName: plate_read_timestamp
             AttributeType: N
+          - AttributeName: days_since_epoch
+            AttributeType: N
         KeySchema:
           - AttributeName: plate_read_id
             KeyType: HASH
           - AttributeName: plate_read_timestamp
             KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - IndexName: DaysSinceEpochIndex
+            KeySchema:
+              - AttributeName: days_since_epoch
+                KeyType: HASH
+              - AttributeName: plate_read_timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
     LprImageBucket:
       Type: AWS::S3::Bucket
       Properties:
