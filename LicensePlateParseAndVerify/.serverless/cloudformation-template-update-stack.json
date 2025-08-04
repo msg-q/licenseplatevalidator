@@ -213,7 +213,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
-          "S3Key": "serverless/lprparseandverify/dev/1754326459120-2025-08-04T16:54:19.120Z/lprparseandverify.zip"
+          "S3Key": "serverless/lprparseandverify/dev/1754332137627-2025-08-04T18:28:57.627Z/lprparseandverify.zip"
         },
         "Handler": "parsehandlers.receivelprdata",
         "Runtime": "python3.12",
@@ -249,7 +249,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
-          "S3Key": "serverless/lprparseandverify/dev/1754326459120-2025-08-04T16:54:19.120Z/lprparseandverify.zip"
+          "S3Key": "serverless/lprparseandverify/dev/1754332137627-2025-08-04T18:28:57.627Z/lprparseandverify.zip"
         },
         "Handler": "verifyhandlers.verifylprdata",
         "Runtime": "python3.12",
@@ -280,24 +280,24 @@
         "VerifylprdataLogGroup"
       ]
     },
-    "ProcesslprdataLambdaVersionQLYlwHPUu30Haw9dryyYckeEC2vofJ2oVSyKJbyLTcA": {
+    "ProcesslprdataLambdaVersionajWBMJVzL0hMcIBTgVlckX7nIFGphfQRvmWDnJvQ0": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ProcesslprdataLambdaFunction"
         },
-        "CodeSha256": "eyGgZJK7rIYDLEogxyw4TFQgCtVLNFTgcSJ9GsoYMf8="
+        "CodeSha256": "SsGfqarvd6mAa5/2XsqI+l2nyv8m8Wj5VHBNxkxaspI="
       }
     },
-    "VerifylprdataLambdaVersionUsOQI86eHJPM2QNEdvfLpDfmLDoirNHMRG5pesOGKU": {
+    "VerifylprdataLambdaVersion1klTskH1ZqIS1HcoRyrUOu5YFgCfaio016NRF3yXc": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "VerifylprdataLambdaFunction"
         },
-        "CodeSha256": "eyGgZJK7rIYDLEogxyw4TFQgCtVLNFTgcSJ9GsoYMf8="
+        "CodeSha256": "SsGfqarvd6mAa5/2XsqI+l2nyv8m8Wj5VHBNxkxaspI="
       }
     },
     "ProcesslprdataEventSourceMappingSQSLprProcessingQueue": {
@@ -493,7 +493,7 @@
     "ProcesslprdataLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ProcesslprdataLambdaVersionQLYlwHPUu30Haw9dryyYckeEC2vofJ2oVSyKJbyLTcA"
+        "Ref": "ProcesslprdataLambdaVersionajWBMJVzL0hMcIBTgVlckX7nIFGphfQRvmWDnJvQ0"
       },
       "Export": {
         "Name": "sls-lprparseandverify-dev-ProcesslprdataLambdaFunctionQualifiedArn"
@@ -502,7 +502,7 @@
     "VerifylprdataLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "VerifylprdataLambdaVersionUsOQI86eHJPM2QNEdvfLpDfmLDoirNHMRG5pesOGKU"
+        "Ref": "VerifylprdataLambdaVersion1klTskH1ZqIS1HcoRyrUOu5YFgCfaio016NRF3yXc"
       },
       "Export": {
         "Name": "sls-lprparseandverify-dev-VerifylprdataLambdaFunctionQualifiedArn"

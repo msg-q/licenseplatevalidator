@@ -11,7 +11,7 @@ import boto3
 s3 = boto3.client('s3')
 sqs = boto3.client('sqs')
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['DYNAMODB_TABLE'])
+table = dynamodb.Table(os.environ['LPR_DYNAMODB_TABLE'])
 image_bucket_name = os.environ['IMAGE_BUCKET_NAME']
 completed_queue_url = os.environ['COMPLETED_QUEUE_URL']
 logger = logging.getLogger()

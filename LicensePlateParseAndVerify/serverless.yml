@@ -48,7 +48,8 @@ provider:
                 - !Ref LprImageBucket
                 - "/*"
   environment:
-    DYNAMODB_TABLE: !Ref LprDataTable
+    LPR_DYNAMODB_TABLE: !Ref LprDataTable
+    VALET_DYNAMODB_TABLE: !Ref ValetRevenueTracking
     IMAGE_BUCKET_NAME: !Ref LprImageBucket
     COMPLETED_QUEUE_URL: !Ref LprParseAndStoreCompletedQueue
 
@@ -128,6 +129,30 @@ resources:
         TimeToLiveSpecification:
           AttributeName: ttl
           Enabled: true
+    LprDataTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ValetRevenueTracking
+        AttributeDefinitions:
+          - AttributeName: plate_read_id
+            AttributeType: S
+          - AttributeName: plate_read_timestamp
+            AttributeType: N
+        KeySchema:
+          - AttributeName: plate_read_id
+            KeyType: HASH
+          - AttributeName: plate_read_timestamp
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: DaysSinceEpochIndex
+            KeySchema:
+              - AttributeName: days_since_epoch
+                KeyType: HASH
+              - AttributeName: plate_read_timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
     LprImageBucket:
       Type: AWS::S3::Bucket
       Properties:
