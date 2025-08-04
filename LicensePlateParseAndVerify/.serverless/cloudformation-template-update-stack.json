@@ -5,13 +5,13 @@
     "ProcesslprdataLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "/aws/lambda/lprparseandstoreservice-dev-processlprdata"
+        "LogGroupName": "/aws/lambda/lpr-parse-and-store"
       }
     },
     "VerifylprdataLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "/aws/lambda/lprparseandstoreservice-dev-verifylprdata"
+        "LogGroupName": "/aws/lambda/lpr-verify"
       }
     },
     "IamRoleLambdaExecution": {
@@ -39,7 +39,7 @@
               "Fn::Join": [
                 "-",
                 [
-                  "lprparseandstoreservice",
+                  "lprparseandverify",
                   "dev",
                   "lambda"
                 ]
@@ -57,7 +57,10 @@
                   ],
                   "Resource": [
                     {
-                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lprparseandstoreservice-dev*:*"
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-parse-and-store:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-verify:*"
                     }
                   ]
                 },
@@ -68,7 +71,10 @@
                   ],
                   "Resource": [
                     {
-                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lprparseandstoreservice-dev*:*:*"
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-parse-and-store:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-verify:*:*"
                     }
                   ]
                 },
@@ -191,7 +197,7 @@
           "Fn::Join": [
             "-",
             [
-              "lprparseandstoreservice",
+              "lprparseandverify",
               "dev",
               {
                 "Ref": "AWS::Region"
@@ -207,11 +213,11 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
-          "S3Key": "serverless/lprparseandstoreservice/dev/1754325297407-2025-08-04T16:34:57.407Z/lprparseandstoreservice.zip"
+          "S3Key": "serverless/lprparseandverify/dev/1754326459120-2025-08-04T16:54:19.120Z/lprparseandverify.zip"
         },
         "Handler": "parsehandlers.receivelprdata",
         "Runtime": "python3.12",
-        "FunctionName": "lprparseandstoreservice-dev-processlprdata",
+        "FunctionName": "lpr-parse-and-store",
         "MemorySize": 256,
         "Timeout": 6,
         "Environment": {
@@ -243,11 +249,11 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
-          "S3Key": "serverless/lprparseandstoreservice/dev/1754325297407-2025-08-04T16:34:57.407Z/lprparseandstoreservice.zip"
+          "S3Key": "serverless/lprparseandverify/dev/1754326459120-2025-08-04T16:54:19.120Z/lprparseandverify.zip"
         },
         "Handler": "verifyhandlers.verifylprdata",
         "Runtime": "python3.12",
-        "FunctionName": "lprparseandstoreservice-dev-verifylprdata",
+        "FunctionName": "lpr-verify",
         "MemorySize": 256,
         "Timeout": 6,
         "Environment": {
@@ -274,24 +280,24 @@
         "VerifylprdataLogGroup"
       ]
     },
-    "ProcesslprdataLambdaVersion2JH3i36csOq1ACuFS5nZ8q8E7I8fbCorVfcF1JFheA": {
+    "ProcesslprdataLambdaVersionQLYlwHPUu30Haw9dryyYckeEC2vofJ2oVSyKJbyLTcA": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ProcesslprdataLambdaFunction"
         },
-        "CodeSha256": "Urg9EyQ4NuwlTydv86uxFjJCWhUIYfS2RVJYrn/gLtg="
+        "CodeSha256": "eyGgZJK7rIYDLEogxyw4TFQgCtVLNFTgcSJ9GsoYMf8="
       }
     },
-    "VerifylprdataLambdaVersionOvk90eOajWWSckzsysTAhEA2Q6xblZqUmmvZro3U98": {
+    "VerifylprdataLambdaVersionUsOQI86eHJPM2QNEdvfLpDfmLDoirNHMRG5pesOGKU": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "VerifylprdataLambdaFunction"
         },
-        "CodeSha256": "Urg9EyQ4NuwlTydv86uxFjJCWhUIYfS2RVJYrn/gLtg="
+        "CodeSha256": "eyGgZJK7rIYDLEogxyw4TFQgCtVLNFTgcSJ9GsoYMf8="
       }
     },
     "ProcesslprdataEventSourceMappingSQSLprProcessingQueue": {
@@ -422,7 +428,11 @@
             }
           }
         ],
-        "BillingMode": "PAY_PER_REQUEST"
+        "BillingMode": "PAY_PER_REQUEST",
+        "TimeToLiveSpecification": {
+          "AttributeName": "ttl",
+          "Enabled": true
+        }
       }
     },
     "LprImageBucket": {
@@ -477,25 +487,25 @@
     "ServerlessDeploymentBucketName": {
       "Value": "serverless-framework-deployments-us-east-1-1320e877-4315",
       "Export": {
-        "Name": "sls-lprparseandstoreservice-dev-ServerlessDeploymentBucketName"
+        "Name": "sls-lprparseandverify-dev-ServerlessDeploymentBucketName"
       }
     },
     "ProcesslprdataLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ProcesslprdataLambdaVersion2JH3i36csOq1ACuFS5nZ8q8E7I8fbCorVfcF1JFheA"
+        "Ref": "ProcesslprdataLambdaVersionQLYlwHPUu30Haw9dryyYckeEC2vofJ2oVSyKJbyLTcA"
       },
       "Export": {
-        "Name": "sls-lprparseandstoreservice-dev-ProcesslprdataLambdaFunctionQualifiedArn"
+        "Name": "sls-lprparseandverify-dev-ProcesslprdataLambdaFunctionQualifiedArn"
       }
     },
     "VerifylprdataLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "VerifylprdataLambdaVersionOvk90eOajWWSckzsysTAhEA2Q6xblZqUmmvZro3U98"
+        "Ref": "VerifylprdataLambdaVersionUsOQI86eHJPM2QNEdvfLpDfmLDoirNHMRG5pesOGKU"
       },
       "Export": {
-        "Name": "sls-lprparseandstoreservice-dev-VerifylprdataLambdaFunctionQualifiedArn"
+        "Name": "sls-lprparseandverify-dev-VerifylprdataLambdaFunctionQualifiedArn"
       }
     }
   }

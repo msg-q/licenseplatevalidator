@@ -1,12 +1,12 @@
 {
-  "/mnt/c/repositories/Research/licenseplatevalidator/LicensePlateParseAndStore/serverless.yml": {
+  "/mnt/c/repositories/Research/licenseplatevalidator/LicensePlateParseAndVerify/serverless.yml": {
     "versionFramework": "4.17.2",
-    "servicePath": "/mnt/c/repositories/Research/licenseplatevalidator/LicensePlateParseAndStore/serverless.yml",
+    "servicePath": "/mnt/c/repositories/Research/licenseplatevalidator/LicensePlateParseAndVerify/serverless.yml",
     "serviceConfigFileName": "serverless.yml",
     "service": {
       "org": "pauleverton",
       "app": "licenseplatevalidator",
-      "service": "lprparseandstoreservice",
+      "service": "lprparseandverify",
       "provider": {
         "name": "aws",
         "runtime": "python3.12",
@@ -117,10 +117,524 @@
         },
         "stage": "dev",
         "region": "us-east-1",
-        "versionFunctions": true
+        "versionFunctions": true,
+        "compiledCloudFormationTemplate": {
+          "AWSTemplateFormatVersion": "2010-09-09",
+          "Description": "The AWS CloudFormation template for this Serverless application",
+          "Resources": {
+            "ProcesslprdataLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/lpr-parse-and-store"
+              }
+            },
+            "VerifylprdataLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/lpr-verify"
+              }
+            },
+            "IamRoleLambdaExecution": {
+              "Type": "AWS::IAM::Role",
+              "Properties": {
+                "AssumeRolePolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": {
+                        "Service": [
+                          "lambda.amazonaws.com"
+                        ]
+                      },
+                      "Action": [
+                        "sts:AssumeRole"
+                      ]
+                    }
+                  ]
+                },
+                "Policies": [
+                  {
+                    "PolicyName": {
+                      "Fn::Join": [
+                        "-",
+                        [
+                          "lprparseandverify",
+                          "dev",
+                          "lambda"
+                        ]
+                      ]
+                    },
+                    "PolicyDocument": {
+                      "Version": "2012-10-17",
+                      "Statement": [
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "logs:CreateLogStream",
+                            "logs:CreateLogGroup",
+                            "logs:TagResource"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-parse-and-store:*"
+                            },
+                            {
+                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-verify:*"
+                            }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "logs:PutLogEvents"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-parse-and-store:*:*"
+                            },
+                            {
+                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-verify:*:*"
+                            }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "s3:GetObject"
+                          ],
+                          "Resource": "arn:aws:s3:::lpringestionservice-dev-s3bucket-q9nhy6tnerz6/*"
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "sqs:ReceiveMessage",
+                            "sqs:DeleteMessage",
+                            "sqs:GetQueueAttributes"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::GetAtt": [
+                                "LprProcessingQueue",
+                                "Arn"
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "dynamodb:PutItem",
+                            "dynamodb:UpdateItem",
+                            "dynamodb:Query"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::GetAtt": [
+                                "LprDataTable",
+                                "Arn"
+                              ]
+                            },
+                            {
+                              "Fn::Join": [
+                                "/",
+                                [
+                                  {
+                                    "Fn::GetAtt": [
+                                      "LprDataTable",
+                                      "Arn"
+                                    ]
+                                  },
+                                  "index",
+                                  "DaysSinceEpochIndex"
+                                ]
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "sqs:SendMessage"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::GetAtt": [
+                                "LprParseAndStoreCompletedQueue",
+                                "Arn"
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "s3:PutObject"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  "arn:aws:s3:::",
+                                  {
+                                    "Ref": "LprImageBucket"
+                                  },
+                                  "/*"
+                                ]
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "sqs:ReceiveMessage",
+                            "sqs:DeleteMessage",
+                            "sqs:GetQueueAttributes"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::GetAtt": [
+                                "LprProcessingQueue",
+                                "Arn"
+                              ]
+                            },
+                            {
+                              "Fn::GetAtt": [
+                                "LprParseAndStoreCompletedQueue",
+                                "Arn"
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "Path": "/",
+                "RoleName": {
+                  "Fn::Join": [
+                    "-",
+                    [
+                      "lprparseandverify",
+                      "dev",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "lambdaRole"
+                    ]
+                  ]
+                }
+              }
+            },
+            "ProcesslprdataLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
+                  "S3Key": "serverless/lprparseandverify/dev/1754326459120-2025-08-04T16:54:19.120Z/lprparseandverify.zip"
+                },
+                "Handler": "parsehandlers.receivelprdata",
+                "Runtime": "python3.12",
+                "FunctionName": "lpr-parse-and-store",
+                "MemorySize": 256,
+                "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "DYNAMODB_TABLE": {
+                      "Ref": "LprDataTable"
+                    },
+                    "IMAGE_BUCKET_NAME": {
+                      "Ref": "LprImageBucket"
+                    },
+                    "COMPLETED_QUEUE_URL": {
+                      "Ref": "LprParseAndStoreCompletedQueue"
+                    }
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "ProcesslprdataLogGroup"
+              ]
+            },
+            "VerifylprdataLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
+                  "S3Key": "serverless/lprparseandverify/dev/1754326459120-2025-08-04T16:54:19.120Z/lprparseandverify.zip"
+                },
+                "Handler": "verifyhandlers.verifylprdata",
+                "Runtime": "python3.12",
+                "FunctionName": "lpr-verify",
+                "MemorySize": 256,
+                "Timeout": 6,
+                "Environment": {
+                  "Variables": {
+                    "DYNAMODB_TABLE": {
+                      "Ref": "LprDataTable"
+                    },
+                    "IMAGE_BUCKET_NAME": {
+                      "Ref": "LprImageBucket"
+                    },
+                    "COMPLETED_QUEUE_URL": {
+                      "Ref": "LprParseAndStoreCompletedQueue"
+                    }
+                  }
+                },
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "VerifylprdataLogGroup"
+              ]
+            },
+            "ProcesslprdataLambdaVersionQLYlwHPUu30Haw9dryyYckeEC2vofJ2oVSyKJbyLTcA": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "ProcesslprdataLambdaFunction"
+                },
+                "CodeSha256": "eyGgZJK7rIYDLEogxyw4TFQgCtVLNFTgcSJ9GsoYMf8="
+              }
+            },
+            "VerifylprdataLambdaVersionUsOQI86eHJPM2QNEdvfLpDfmLDoirNHMRG5pesOGKU": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "VerifylprdataLambdaFunction"
+                },
+                "CodeSha256": "eyGgZJK7rIYDLEogxyw4TFQgCtVLNFTgcSJ9GsoYMf8="
+              }
+            },
+            "ProcesslprdataEventSourceMappingSQSLprProcessingQueue": {
+              "Type": "AWS::Lambda::EventSourceMapping",
+              "DependsOn": [
+                "IamRoleLambdaExecution"
+              ],
+              "Properties": {
+                "BatchSize": 1,
+                "EventSourceArn": {
+                  "Fn::GetAtt": [
+                    "LprProcessingQueue",
+                    "Arn"
+                  ]
+                },
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "ProcesslprdataLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Enabled": true
+              }
+            },
+            "VerifylprdataEventSourceMappingSQSLprParseAndStoreCompletedQueue": {
+              "Type": "AWS::Lambda::EventSourceMapping",
+              "DependsOn": [
+                "IamRoleLambdaExecution"
+              ],
+              "Properties": {
+                "BatchSize": 1,
+                "EventSourceArn": {
+                  "Fn::GetAtt": [
+                    "LprParseAndStoreCompletedQueue",
+                    "Arn"
+                  ]
+                },
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "VerifylprdataLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Enabled": true
+              }
+            },
+            "LprProcessingQueue": {
+              "Type": "AWS::SQS::Queue",
+              "Properties": {
+                "QueueName": "lpr-processing-queue"
+              }
+            },
+            "S3ToSqsPolicy": {
+              "Type": "AWS::SQS::QueuePolicy",
+              "Properties": {
+                "Queues": [
+                  {
+                    "Ref": "LprProcessingQueue"
+                  }
+                ],
+                "PolicyDocument": {
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": {
+                        "Service": "s3.amazonaws.com"
+                      },
+                      "Action": "SQS:SendMessage",
+                      "Resource": {
+                        "Fn::GetAtt": [
+                          "LprProcessingQueue",
+                          "Arn"
+                        ]
+                      },
+                      "Condition": {
+                        "ArnLike": {
+                          "aws:SourceArn": "arn:aws:s3:::lpringestionservice-dev-s3bucket-q9nhy6tnerz6"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "LprDataTable": {
+              "Type": "AWS::DynamoDB::Table",
+              "Properties": {
+                "TableName": "LprDataTable",
+                "AttributeDefinitions": [
+                  {
+                    "AttributeName": "plate_read_id",
+                    "AttributeType": "S"
+                  },
+                  {
+                    "AttributeName": "plate_read_timestamp",
+                    "AttributeType": "N"
+                  },
+                  {
+                    "AttributeName": "days_since_epoch",
+                    "AttributeType": "N"
+                  }
+                ],
+                "KeySchema": [
+                  {
+                    "AttributeName": "plate_read_id",
+                    "KeyType": "HASH"
+                  },
+                  {
+                    "AttributeName": "plate_read_timestamp",
+                    "KeyType": "RANGE"
+                  }
+                ],
+                "GlobalSecondaryIndexes": [
+                  {
+                    "IndexName": "DaysSinceEpochIndex",
+                    "KeySchema": [
+                      {
+                        "AttributeName": "days_since_epoch",
+                        "KeyType": "HASH"
+                      },
+                      {
+                        "AttributeName": "plate_read_timestamp",
+                        "KeyType": "RANGE"
+                      }
+                    ],
+                    "Projection": {
+                      "ProjectionType": "ALL"
+                    }
+                  }
+                ],
+                "BillingMode": "PAY_PER_REQUEST",
+                "TimeToLiveSpecification": {
+                  "AttributeName": "ttl",
+                  "Enabled": true
+                }
+              }
+            },
+            "LprImageBucket": {
+              "Type": "AWS::S3::Bucket",
+              "Properties": {
+                "PublicAccessBlockConfiguration": {
+                  "BlockPublicAcls": true,
+                  "IgnorePublicAcls": true,
+                  "BlockPublicPolicy": false,
+                  "RestrictPublicBuckets": false
+                }
+              }
+            },
+            "LprImageBucketPolicy": {
+              "Type": "AWS::S3::BucketPolicy",
+              "Properties": {
+                "Bucket": {
+                  "Ref": "LprImageBucket"
+                },
+                "PolicyDocument": {
+                  "Statement": [
+                    {
+                      "Sid": "PublicReadGetObject",
+                      "Effect": "Allow",
+                      "Principal": "*",
+                      "Action": "s3:GetObject",
+                      "Resource": {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:aws:s3:::",
+                            {
+                              "Ref": "LprImageBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "LprParseAndStoreCompletedQueue": {
+              "Type": "AWS::SQS::Queue",
+              "Properties": {
+                "QueueName": "lpr-parse-and-store-completed"
+              }
+            }
+          },
+          "Outputs": {
+            "ServerlessDeploymentBucketName": {
+              "Value": "serverless-framework-deployments-us-east-1-1320e877-4315",
+              "Export": {
+                "Name": "sls-lprparseandverify-dev-ServerlessDeploymentBucketName"
+              }
+            },
+            "ProcesslprdataLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "ProcesslprdataLambdaVersionQLYlwHPUu30Haw9dryyYckeEC2vofJ2oVSyKJbyLTcA"
+              },
+              "Export": {
+                "Name": "sls-lprparseandverify-dev-ProcesslprdataLambdaFunctionQualifiedArn"
+              }
+            },
+            "VerifylprdataLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "VerifylprdataLambdaVersionUsOQI86eHJPM2QNEdvfLpDfmLDoirNHMRG5pesOGKU"
+              },
+              "Export": {
+                "Name": "sls-lprparseandverify-dev-VerifylprdataLambdaFunctionQualifiedArn"
+              }
+            }
+          }
+        },
+        "vpc": {}
       },
       "functions": {
         "processlprdata": {
+          "name": "lpr-parse-and-store",
           "handler": "parsehandlers.receivelprdata",
           "memorySize": 256,
           "events": [
@@ -136,9 +650,15 @@
               }
             }
           ],
-          "name": "lprparseandstoreservice-dev-processlprdata"
+          "package": {},
+          "memory": 256,
+          "timeout": 6,
+          "runtime": "python3.12",
+          "vpc": {},
+          "versionLogicalId": "ProcesslprdataLambdaVersionQLYlwHPUu30Haw9dryyYckeEC2vofJ2oVSyKJbyLTcA"
         },
         "verifylprdata": {
+          "name": "lpr-verify",
           "handler": "verifyhandlers.verifylprdata",
           "memorySize": 256,
           "events": [
@@ -154,7 +674,12 @@
               }
             }
           ],
-          "name": "lprparseandstoreservice-dev-verifylprdata"
+          "package": {},
+          "memory": 256,
+          "timeout": 6,
+          "runtime": "python3.12",
+          "vpc": {},
+          "versionLogicalId": "VerifylprdataLambdaVersionUsOQI86eHJPM2QNEdvfLpDfmLDoirNHMRG5pesOGKU"
         }
       },
       "resources": {
@@ -212,10 +737,6 @@
                 },
                 {
                   "AttributeName": "days_since_epoch",
-                  "AttributeType": "N"
-                },
-                {
-                  "AttributeName": "ttl",
                   "AttributeType": "N"
                 }
               ],
@@ -301,7 +822,8 @@
               "QueueName": "lpr-parse-and-store-completed"
             }
           }
-        }
+        },
+        "Outputs": {}
       }
     },
     "provider": {
@@ -414,7 +936,520 @@
       },
       "stage": "dev",
       "region": "us-east-1",
-      "versionFunctions": true
+      "versionFunctions": true,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ProcesslprdataLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/lpr-parse-and-store"
+            }
+          },
+          "VerifylprdataLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/lpr-verify"
+            }
+          },
+          "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "lprparseandverify",
+                        "dev",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup",
+                          "logs:TagResource"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-parse-and-store:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-verify:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-parse-and-store:*:*"
+                          },
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-verify:*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "s3:GetObject"
+                        ],
+                        "Resource": "arn:aws:s3:::lpringestionservice-dev-s3bucket-q9nhy6tnerz6/*"
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "sqs:ReceiveMessage",
+                          "sqs:DeleteMessage",
+                          "sqs:GetQueueAttributes"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::GetAtt": [
+                              "LprProcessingQueue",
+                              "Arn"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "dynamodb:PutItem",
+                          "dynamodb:UpdateItem",
+                          "dynamodb:Query"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::GetAtt": [
+                              "LprDataTable",
+                              "Arn"
+                            ]
+                          },
+                          {
+                            "Fn::Join": [
+                              "/",
+                              [
+                                {
+                                  "Fn::GetAtt": [
+                                    "LprDataTable",
+                                    "Arn"
+                                  ]
+                                },
+                                "index",
+                                "DaysSinceEpochIndex"
+                              ]
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "sqs:SendMessage"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::GetAtt": [
+                              "LprParseAndStoreCompletedQueue",
+                              "Arn"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "s3:PutObject"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Join": [
+                              "",
+                              [
+                                "arn:aws:s3:::",
+                                {
+                                  "Ref": "LprImageBucket"
+                                },
+                                "/*"
+                              ]
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "sqs:ReceiveMessage",
+                          "sqs:DeleteMessage",
+                          "sqs:GetQueueAttributes"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::GetAtt": [
+                              "LprProcessingQueue",
+                              "Arn"
+                            ]
+                          },
+                          {
+                            "Fn::GetAtt": [
+                              "LprParseAndStoreCompletedQueue",
+                              "Arn"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "lprparseandverify",
+                    "dev",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "lambdaRole"
+                  ]
+                ]
+              }
+            }
+          },
+          "ProcesslprdataLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
+                "S3Key": "serverless/lprparseandverify/dev/1754326459120-2025-08-04T16:54:19.120Z/lprparseandverify.zip"
+              },
+              "Handler": "parsehandlers.receivelprdata",
+              "Runtime": "python3.12",
+              "FunctionName": "lpr-parse-and-store",
+              "MemorySize": 256,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "DYNAMODB_TABLE": {
+                    "Ref": "LprDataTable"
+                  },
+                  "IMAGE_BUCKET_NAME": {
+                    "Ref": "LprImageBucket"
+                  },
+                  "COMPLETED_QUEUE_URL": {
+                    "Ref": "LprParseAndStoreCompletedQueue"
+                  }
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "ProcesslprdataLogGroup"
+            ]
+          },
+          "VerifylprdataLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
+                "S3Key": "serverless/lprparseandverify/dev/1754326459120-2025-08-04T16:54:19.120Z/lprparseandverify.zip"
+              },
+              "Handler": "verifyhandlers.verifylprdata",
+              "Runtime": "python3.12",
+              "FunctionName": "lpr-verify",
+              "MemorySize": 256,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "DYNAMODB_TABLE": {
+                    "Ref": "LprDataTable"
+                  },
+                  "IMAGE_BUCKET_NAME": {
+                    "Ref": "LprImageBucket"
+                  },
+                  "COMPLETED_QUEUE_URL": {
+                    "Ref": "LprParseAndStoreCompletedQueue"
+                  }
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "VerifylprdataLogGroup"
+            ]
+          },
+          "ProcesslprdataLambdaVersionQLYlwHPUu30Haw9dryyYckeEC2vofJ2oVSyKJbyLTcA": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "ProcesslprdataLambdaFunction"
+              },
+              "CodeSha256": "eyGgZJK7rIYDLEogxyw4TFQgCtVLNFTgcSJ9GsoYMf8="
+            }
+          },
+          "VerifylprdataLambdaVersionUsOQI86eHJPM2QNEdvfLpDfmLDoirNHMRG5pesOGKU": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "VerifylprdataLambdaFunction"
+              },
+              "CodeSha256": "eyGgZJK7rIYDLEogxyw4TFQgCtVLNFTgcSJ9GsoYMf8="
+            }
+          },
+          "ProcesslprdataEventSourceMappingSQSLprProcessingQueue": {
+            "Type": "AWS::Lambda::EventSourceMapping",
+            "DependsOn": [
+              "IamRoleLambdaExecution"
+            ],
+            "Properties": {
+              "BatchSize": 1,
+              "EventSourceArn": {
+                "Fn::GetAtt": [
+                  "LprProcessingQueue",
+                  "Arn"
+                ]
+              },
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "ProcesslprdataLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Enabled": true
+            }
+          },
+          "VerifylprdataEventSourceMappingSQSLprParseAndStoreCompletedQueue": {
+            "Type": "AWS::Lambda::EventSourceMapping",
+            "DependsOn": [
+              "IamRoleLambdaExecution"
+            ],
+            "Properties": {
+              "BatchSize": 1,
+              "EventSourceArn": {
+                "Fn::GetAtt": [
+                  "LprParseAndStoreCompletedQueue",
+                  "Arn"
+                ]
+              },
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "VerifylprdataLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Enabled": true
+            }
+          },
+          "LprProcessingQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "lpr-processing-queue"
+            }
+          },
+          "S3ToSqsPolicy": {
+            "Type": "AWS::SQS::QueuePolicy",
+            "Properties": {
+              "Queues": [
+                {
+                  "Ref": "LprProcessingQueue"
+                }
+              ],
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": "s3.amazonaws.com"
+                    },
+                    "Action": "SQS:SendMessage",
+                    "Resource": {
+                      "Fn::GetAtt": [
+                        "LprProcessingQueue",
+                        "Arn"
+                      ]
+                    },
+                    "Condition": {
+                      "ArnLike": {
+                        "aws:SourceArn": "arn:aws:s3:::lpringestionservice-dev-s3bucket-q9nhy6tnerz6"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "LprDataTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "LprDataTable",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "plate_read_id",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "plate_read_timestamp",
+                  "AttributeType": "N"
+                },
+                {
+                  "AttributeName": "days_since_epoch",
+                  "AttributeType": "N"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "plate_read_id",
+                  "KeyType": "HASH"
+                },
+                {
+                  "AttributeName": "plate_read_timestamp",
+                  "KeyType": "RANGE"
+                }
+              ],
+              "GlobalSecondaryIndexes": [
+                {
+                  "IndexName": "DaysSinceEpochIndex",
+                  "KeySchema": [
+                    {
+                      "AttributeName": "days_since_epoch",
+                      "KeyType": "HASH"
+                    },
+                    {
+                      "AttributeName": "plate_read_timestamp",
+                      "KeyType": "RANGE"
+                    }
+                  ],
+                  "Projection": {
+                    "ProjectionType": "ALL"
+                  }
+                }
+              ],
+              "BillingMode": "PAY_PER_REQUEST",
+              "TimeToLiveSpecification": {
+                "AttributeName": "ttl",
+                "Enabled": true
+              }
+            }
+          },
+          "LprImageBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": true,
+                "IgnorePublicAcls": true,
+                "BlockPublicPolicy": false,
+                "RestrictPublicBuckets": false
+              }
+            }
+          },
+          "LprImageBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "LprImageBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Sid": "PublicReadGetObject",
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": "s3:GetObject",
+                    "Resource": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:s3:::",
+                          {
+                            "Ref": "LprImageBucket"
+                          },
+                          "/*"
+                        ]
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "LprParseAndStoreCompletedQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "lpr-parse-and-store-completed"
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": "serverless-framework-deployments-us-east-1-1320e877-4315",
+            "Export": {
+              "Name": "sls-lprparseandverify-dev-ServerlessDeploymentBucketName"
+            }
+          },
+          "ProcesslprdataLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "ProcesslprdataLambdaVersionQLYlwHPUu30Haw9dryyYckeEC2vofJ2oVSyKJbyLTcA"
+            },
+            "Export": {
+              "Name": "sls-lprparseandverify-dev-ProcesslprdataLambdaFunctionQualifiedArn"
+            }
+          },
+          "VerifylprdataLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "VerifylprdataLambdaVersionUsOQI86eHJPM2QNEdvfLpDfmLDoirNHMRG5pesOGKU"
+            },
+            "Export": {
+              "Name": "sls-lprparseandverify-dev-VerifylprdataLambdaFunctionQualifiedArn"
+            }
+          }
+        }
+      },
+      "vpc": {}
     },
     "dashboard": {
       "isEnabledForService": true,
@@ -435,14 +1470,9 @@
       },
       "instanceParameters": null
     },
-    "error": {
-      "message": "An error occurred: LprImageBucket - Resource handler returned message: \"The bucket you tried to delete is not empty (Service: S3, Status Code: 409, Request ID: D524YEX2F8J9R2YB, Extended Request ID: ylPkjQTaH8j/FTlHbgVvlaGu8UxP3aSupNRurLacrq4lj+2STLHMok06MQewXhclDaNiDYTurxKggCQarlsqs8YJJF8fBZus) (SDK Attempt Count: 1)\" (RequestToken: 5f450c7f-c4e6-3f4e-72e1-eef8bbc9e3a4, HandlerErrorCode: GeneralServiceException).",
-      "stack": "ServerlessError2: An error occurred: LprImageBucket - Resource handler returned message: \"The bucket you tried to delete is not empty (Service: S3, Status Code: 409, Request ID: D524YEX2F8J9R2YB, Extended Request ID: ylPkjQTaH8j/FTlHbgVvlaGu8UxP3aSupNRurLacrq4lj+2STLHMok06MQewXhclDaNiDYTurxKggCQarlsqs8YJJF8fBZus) (SDK Attempt Count: 1)\" (RequestToken: 5f450c7f-c4e6-3f4e-72e1-eef8bbc9e3a4, HandlerErrorCode: GeneralServiceException).\n    at file:///root/.serverless/releases/4.17.2/package/dist/sf-core.js:1153:828\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async remove:remove (file:///root/.serverless/releases/4.17.2/package/dist/sf-core.js:1174:27617)\n    at async PluginManager.runHooks (file:///root/.serverless/releases/4.17.2/package/dist/sf-core.js:1355:9865)\n    at async PluginManager.invoke (file:///root/.serverless/releases/4.17.2/package/dist/sf-core.js:1355:10634)\n    at async PluginManager.run (file:///root/.serverless/releases/4.17.2/package/dist/sf-core.js:1355:11364)\n    at async Serverless.run (file:///root/.serverless/releases/4.17.2/package/dist/sf-core.js:1362:10523)\n    at async runFramework (file:///root/.serverless/releases/4.17.2/package/dist/sf-core.js:1389:1777)\n    at async TraditionalRunner.run (file:///root/.serverless/releases/4.17.2/package/dist/sf-core.js:1385:28331)\n    at async route (file:///root/.serverless/releases/4.17.2/package/dist/sf-core.js:1560:2878)",
-      "code": "AWS_CLOUD_FORMATION_DELETE_STACK_INTERNAL_S3_BUCKET_DELETE_FAILED"
-    },
-    "serviceRawFile": "# \"org\" ensures this Service is used with the correct Serverless Framework Access Key.\norg: pauleverton\n# \"app\" enables Serverless Framework Dashboard features and sharing them with other Services.\napp: licenseplatevalidator\nservice: lprparseandstoreservice\n\nprovider:\n  name: aws\n  runtime: python3.12\n  iam:\n    role:\n      statements:\n        - Effect: \"Allow\"\n          Action:\n            - \"s3:GetObject\"\n          Resource: \"arn:aws:s3:::lpringestionservice-dev-s3bucket-q9nhy6tnerz6/*\"\n        - Effect: \"Allow\"\n          Action:\n            - \"sqs:ReceiveMessage\"\n            - \"sqs:DeleteMessage\"\n            - \"sqs:GetQueueAttributes\"\n          Resource:\n            - Fn::GetAtt: [ LprProcessingQueue, Arn ]\n        - Effect: \"Allow\"\n          Action:\n            - \"dynamodb:PutItem\"\n            - \"dynamodb:UpdateItem\"\n            - \"dynamodb:Query\"\n          Resource:\n            - Fn::GetAtt: [ LprDataTable, Arn ]\n            - !Join\n              - '/'\n              - - !GetAtt LprDataTable.Arn\n                - 'index'\n                - 'DaysSinceEpochIndex'\n        - Effect: \"Allow\"\n          Action:\n            - \"sqs:SendMessage\"\n          Resource:\n            - Fn::GetAtt: [ LprParseAndStoreCompletedQueue, Arn ]\n        - Effect: \"Allow\"\n          Action:\n            - \"s3:PutObject\"\n          Resource:\n            - Fn::Join:\n              - \"\"\n              - - \"arn:aws:s3:::\"\n                - !Ref LprImageBucket\n                - \"/*\"\n  environment:\n    DYNAMODB_TABLE: !Ref LprDataTable\n    IMAGE_BUCKET_NAME: !Ref LprImageBucket\n    COMPLETED_QUEUE_URL: !Ref LprParseAndStoreCompletedQueue\n\nfunctions:\n  processlprdata:\n    handler: parsehandlers.receivelprdata\n    memorySize: 256\n    events:\n      - sqs:\n          arn:\n            Fn::GetAtt:\n              - LprProcessingQueue\n              - Arn\n          batchSize: 1\n\n  verifylprdata:\n    handler: verifyhandlers.verifylprdata\n    memorySize: 256\n    events:\n      - sqs:\n          arn:\n            Fn::GetAtt:\n              - LprParseAndStoreCompletedQueue\n              - Arn\n          batchSize: 1\n\nresources:\n  Resources:\n    LprProcessingQueue:\n      Type: AWS::SQS::Queue\n      Properties:\n        QueueName: lpr-processing-queue\n    S3ToSqsPolicy:\n      Type: AWS::SQS::QueuePolicy\n      Properties:\n        Queues:\n          - Ref: LprProcessingQueue\n        PolicyDocument:\n          Statement:\n            - Effect: Allow\n              Principal:\n                Service: \"s3.amazonaws.com\"\n              Action: SQS:SendMessage\n              Resource:\n                Fn::GetAtt: [ LprProcessingQueue, Arn ]\n              Condition:\n                ArnLike:\n                  aws:SourceArn: \"arn:aws:s3:::lpringestionservice-dev-s3bucket-q9nhy6tnerz6\"\n    LprDataTable:\n      Type: AWS::DynamoDB::Table\n      Properties:\n        TableName: LprDataTable\n        AttributeDefinitions:\n          - AttributeName: plate_read_id\n            AttributeType: S\n          - AttributeName: plate_read_timestamp\n            AttributeType: N\n          - AttributeName: days_since_epoch\n            AttributeType: N\n          - AttributeName: ttl\n            AttributeType: N\n        KeySchema:\n          - AttributeName: plate_read_id\n            KeyType: HASH\n          - AttributeName: plate_read_timestamp\n            KeyType: RANGE\n        GlobalSecondaryIndexes:\n          - IndexName: DaysSinceEpochIndex\n            KeySchema:\n              - AttributeName: days_since_epoch\n                KeyType: HASH\n              - AttributeName: plate_read_timestamp\n                KeyType: RANGE\n            Projection:\n              ProjectionType: ALL\n        BillingMode: PAY_PER_REQUEST\n        TimeToLiveSpecification:\n          AttributeName: ttl\n          Enabled: true\n    LprImageBucket:\n      Type: AWS::S3::Bucket\n      Properties:\n        PublicAccessBlockConfiguration:\n          BlockPublicAcls: true\n          IgnorePublicAcls: true\n          BlockPublicPolicy: false\n          RestrictPublicBuckets: false\n    LprImageBucketPolicy:\n      Type: AWS::S3::BucketPolicy\n      Properties:\n        Bucket: !Ref LprImageBucket\n        PolicyDocument:\n          Statement:\n            - Sid: PublicReadGetObject\n              Effect: Allow\n              Principal: \"*\"\n              Action: s3:GetObject\n              Resource: !Join\n                - \"\"\n                - - \"arn:aws:s3:::\"\n                  - !Ref LprImageBucket\n                  - \"/*\"\n    LprParseAndStoreCompletedQueue:\n      Type: AWS::SQS::Queue\n      Properties:\n        QueueName: lpr-parse-and-store-completed",
+    "serviceRawFile": "# \"org\" ensures this Service is used with the correct Serverless Framework Access Key.\norg: pauleverton\n# \"app\" enables Serverless Framework Dashboard features and sharing them with other Services.\napp: licenseplatevalidator\nservice: lprparseandverify\n\nprovider:\n  name: aws\n  runtime: python3.12\n  iam:\n    role:\n      statements:\n        - Effect: \"Allow\"\n          Action:\n            - \"s3:GetObject\"\n          Resource: \"arn:aws:s3:::lpringestionservice-dev-s3bucket-q9nhy6tnerz6/*\"\n        - Effect: \"Allow\"\n          Action:\n            - \"sqs:ReceiveMessage\"\n            - \"sqs:DeleteMessage\"\n            - \"sqs:GetQueueAttributes\"\n          Resource:\n            - Fn::GetAtt: [ LprProcessingQueue, Arn ]\n        - Effect: \"Allow\"\n          Action:\n            - \"dynamodb:PutItem\"\n            - \"dynamodb:UpdateItem\"\n            - \"dynamodb:Query\"\n          Resource:\n            - Fn::GetAtt: [ LprDataTable, Arn ]\n            - !Join\n              - '/'\n              - - !GetAtt LprDataTable.Arn\n                - 'index'\n                - 'DaysSinceEpochIndex'\n        - Effect: \"Allow\"\n          Action:\n            - \"sqs:SendMessage\"\n          Resource:\n            - Fn::GetAtt: [ LprParseAndStoreCompletedQueue, Arn ]\n        - Effect: \"Allow\"\n          Action:\n            - \"s3:PutObject\"\n          Resource:\n            - Fn::Join:\n              - \"\"\n              - - \"arn:aws:s3:::\"\n                - !Ref LprImageBucket\n                - \"/*\"\n  environment:\n    DYNAMODB_TABLE: !Ref LprDataTable\n    IMAGE_BUCKET_NAME: !Ref LprImageBucket\n    COMPLETED_QUEUE_URL: !Ref LprParseAndStoreCompletedQueue\n\nfunctions:\n  processlprdata:\n    name: lpr-parse-and-store\n    handler: parsehandlers.receivelprdata\n    memorySize: 256\n    events:\n      - sqs:\n          arn:\n            Fn::GetAtt:\n              - LprProcessingQueue\n              - Arn\n          batchSize: 1\n\n  verifylprdata:\n    name: lpr-verify\n    handler: verifyhandlers.verifylprdata\n    memorySize: 256\n    events:\n      - sqs:\n          arn:\n            Fn::GetAtt:\n              - LprParseAndStoreCompletedQueue\n              - Arn\n          batchSize: 1\n\nresources:\n  Resources:\n    LprProcessingQueue:\n      Type: AWS::SQS::Queue\n      Properties:\n        QueueName: lpr-processing-queue\n    S3ToSqsPolicy:\n      Type: AWS::SQS::QueuePolicy\n      Properties:\n        Queues:\n          - Ref: LprProcessingQueue\n        PolicyDocument:\n          Statement:\n            - Effect: Allow\n              Principal:\n                Service: \"s3.amazonaws.com\"\n              Action: SQS:SendMessage\n              Resource:\n                Fn::GetAtt: [ LprProcessingQueue, Arn ]\n              Condition:\n                ArnLike:\n                  aws:SourceArn: \"arn:aws:s3:::lpringestionservice-dev-s3bucket-q9nhy6tnerz6\"\n    LprDataTable:\n      Type: AWS::DynamoDB::Table\n      Properties:\n        TableName: LprDataTable\n        AttributeDefinitions:\n          - AttributeName: plate_read_id\n            AttributeType: S\n          - AttributeName: plate_read_timestamp\n            AttributeType: N\n          - AttributeName: days_since_epoch\n            AttributeType: N\n        KeySchema:\n          - AttributeName: plate_read_id\n            KeyType: HASH\n          - AttributeName: plate_read_timestamp\n            KeyType: RANGE\n        GlobalSecondaryIndexes:\n          - IndexName: DaysSinceEpochIndex\n            KeySchema:\n              - AttributeName: days_since_epoch\n                KeyType: HASH\n              - AttributeName: plate_read_timestamp\n                KeyType: RANGE\n            Projection:\n              ProjectionType: ALL\n        BillingMode: PAY_PER_REQUEST\n        TimeToLiveSpecification:\n          AttributeName: ttl\n          Enabled: true\n    LprImageBucket:\n      Type: AWS::S3::Bucket\n      Properties:\n        PublicAccessBlockConfiguration:\n          BlockPublicAcls: true\n          IgnorePublicAcls: true\n          BlockPublicPolicy: false\n          RestrictPublicBuckets: false\n    LprImageBucketPolicy:\n      Type: AWS::S3::BucketPolicy\n      Properties:\n        Bucket: !Ref LprImageBucket\n        PolicyDocument:\n          Statement:\n            - Sid: PublicReadGetObject\n              Effect: Allow\n              Principal: \"*\"\n              Action: s3:GetObject\n              Resource: !Join\n                - \"\"\n                - - \"arn:aws:s3:::\"\n                  - !Ref LprImageBucket\n                  - \"/*\"\n    LprParseAndStoreCompletedQueue:\n      Type: AWS::SQS::Queue\n      Properties:\n        QueueName: lpr-parse-and-store-completed",
     "command": [
-      "remove"
+      "deploy"
     ],
     "options": {},
     "orgId": "12513851-0f00-4616-8ca5-4e5a553cc67d",
@@ -450,29 +1480,541 @@
     "userId": "PyTX8YthJhRRyv4jLM",
     "userName": "pauleverton",
     "serviceProviderAwsAccountId": "877174350179",
-    "serviceProviderAwsCfStackName": "lprparseandstoreservice-dev",
-    "serviceProviderAwsCfStackId": "arn:aws:cloudformation:us-east-1:877174350179:stack/lprparseandstoreservice-dev/f6f1a7c0-7150-11f0-9453-12d6f0db90af",
-    "serviceProviderAwsCfStackCreated": "2025-08-04T16:35:00.397Z",
+    "serviceProviderAwsCfStackName": "lprparseandverify-dev",
+    "serviceProviderAwsCfStackId": "arn:aws:cloudformation:us-east-1:877174350179:stack/lprparseandverify-dev/ab78a480-7153-11f0-baca-1207d3ee40f1",
+    "serviceProviderAwsCfStackCreated": "2025-08-04T16:54:22.264Z",
     "serviceProviderAwsCfStackUpdated": null,
     "serviceProviderAwsCfStackStatus": "CREATE_COMPLETE",
     "serviceProviderAwsCfStackOutputs": [
       {
         "OutputKey": "VerifylprdataLambdaFunctionQualifiedArn",
-        "OutputValue": "arn:aws:lambda:us-east-1:877174350179:function:lprparseandstoreservice-dev-verifylprdata:1",
+        "OutputValue": "arn:aws:lambda:us-east-1:877174350179:function:lpr-verify:1",
         "Description": "Current Lambda function version",
-        "ExportName": "sls-lprparseandstoreservice-dev-VerifylprdataLambdaFunctionQualifiedArn"
+        "ExportName": "sls-lprparseandverify-dev-VerifylprdataLambdaFunctionQualifiedArn"
       },
       {
         "OutputKey": "ProcesslprdataLambdaFunctionQualifiedArn",
-        "OutputValue": "arn:aws:lambda:us-east-1:877174350179:function:lprparseandstoreservice-dev-processlprdata:4",
+        "OutputValue": "arn:aws:lambda:us-east-1:877174350179:function:lpr-parse-and-store:1",
         "Description": "Current Lambda function version",
-        "ExportName": "sls-lprparseandstoreservice-dev-ProcesslprdataLambdaFunctionQualifiedArn"
+        "ExportName": "sls-lprparseandverify-dev-ProcesslprdataLambdaFunctionQualifiedArn"
       },
       {
         "OutputKey": "ServerlessDeploymentBucketName",
         "OutputValue": "serverless-framework-deployments-us-east-1-1320e877-4315",
-        "ExportName": "sls-lprparseandstoreservice-dev-ServerlessDeploymentBucketName"
+        "ExportName": "sls-lprparseandverify-dev-ServerlessDeploymentBucketName"
       }
-    ]
+    ],
+    "compiledCloudFormationTemplate": {
+      "AWSTemplateFormatVersion": "2010-09-09",
+      "Description": "The AWS CloudFormation template for this Serverless application",
+      "Resources": {
+        "ProcesslprdataLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/lpr-parse-and-store"
+          }
+        },
+        "VerifylprdataLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/lpr-verify"
+          }
+        },
+        "IamRoleLambdaExecution": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": [
+                      "lambda.amazonaws.com"
+                    ]
+                  },
+                  "Action": [
+                    "sts:AssumeRole"
+                  ]
+                }
+              ]
+            },
+            "Policies": [
+              {
+                "PolicyName": {
+                  "Fn::Join": [
+                    "-",
+                    [
+                      "lprparseandverify",
+                      "dev",
+                      "lambda"
+                    ]
+                  ]
+                },
+                "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "logs:CreateLogStream",
+                        "logs:CreateLogGroup",
+                        "logs:TagResource"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-parse-and-store:*"
+                        },
+                        {
+                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-verify:*"
+                        }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "logs:PutLogEvents"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-parse-and-store:*:*"
+                        },
+                        {
+                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpr-verify:*:*"
+                        }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "s3:GetObject"
+                      ],
+                      "Resource": "arn:aws:s3:::lpringestionservice-dev-s3bucket-q9nhy6tnerz6/*"
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "sqs:ReceiveMessage",
+                        "sqs:DeleteMessage",
+                        "sqs:GetQueueAttributes"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::GetAtt": [
+                            "LprProcessingQueue",
+                            "Arn"
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "dynamodb:PutItem",
+                        "dynamodb:UpdateItem",
+                        "dynamodb:Query"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::GetAtt": [
+                            "LprDataTable",
+                            "Arn"
+                          ]
+                        },
+                        {
+                          "Fn::Join": [
+                            "/",
+                            [
+                              {
+                                "Fn::GetAtt": [
+                                  "LprDataTable",
+                                  "Arn"
+                                ]
+                              },
+                              "index",
+                              "DaysSinceEpochIndex"
+                            ]
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "sqs:SendMessage"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::GetAtt": [
+                            "LprParseAndStoreCompletedQueue",
+                            "Arn"
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "s3:PutObject"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::Join": [
+                            "",
+                            [
+                              "arn:aws:s3:::",
+                              {
+                                "Ref": "LprImageBucket"
+                              },
+                              "/*"
+                            ]
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "sqs:ReceiveMessage",
+                        "sqs:DeleteMessage",
+                        "sqs:GetQueueAttributes"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::GetAtt": [
+                            "LprProcessingQueue",
+                            "Arn"
+                          ]
+                        },
+                        {
+                          "Fn::GetAtt": [
+                            "LprParseAndStoreCompletedQueue",
+                            "Arn"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ],
+            "Path": "/",
+            "RoleName": {
+              "Fn::Join": [
+                "-",
+                [
+                  "lprparseandverify",
+                  "dev",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "lambdaRole"
+                ]
+              ]
+            }
+          }
+        },
+        "ProcesslprdataLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
+              "S3Key": "serverless/lprparseandverify/dev/1754326459120-2025-08-04T16:54:19.120Z/lprparseandverify.zip"
+            },
+            "Handler": "parsehandlers.receivelprdata",
+            "Runtime": "python3.12",
+            "FunctionName": "lpr-parse-and-store",
+            "MemorySize": 256,
+            "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "DYNAMODB_TABLE": {
+                  "Ref": "LprDataTable"
+                },
+                "IMAGE_BUCKET_NAME": {
+                  "Ref": "LprImageBucket"
+                },
+                "COMPLETED_QUEUE_URL": {
+                  "Ref": "LprParseAndStoreCompletedQueue"
+                }
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "ProcesslprdataLogGroup"
+          ]
+        },
+        "VerifylprdataLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
+              "S3Key": "serverless/lprparseandverify/dev/1754326459120-2025-08-04T16:54:19.120Z/lprparseandverify.zip"
+            },
+            "Handler": "verifyhandlers.verifylprdata",
+            "Runtime": "python3.12",
+            "FunctionName": "lpr-verify",
+            "MemorySize": 256,
+            "Timeout": 6,
+            "Environment": {
+              "Variables": {
+                "DYNAMODB_TABLE": {
+                  "Ref": "LprDataTable"
+                },
+                "IMAGE_BUCKET_NAME": {
+                  "Ref": "LprImageBucket"
+                },
+                "COMPLETED_QUEUE_URL": {
+                  "Ref": "LprParseAndStoreCompletedQueue"
+                }
+              }
+            },
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "VerifylprdataLogGroup"
+          ]
+        },
+        "ProcesslprdataLambdaVersionQLYlwHPUu30Haw9dryyYckeEC2vofJ2oVSyKJbyLTcA": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "ProcesslprdataLambdaFunction"
+            },
+            "CodeSha256": "eyGgZJK7rIYDLEogxyw4TFQgCtVLNFTgcSJ9GsoYMf8="
+          }
+        },
+        "VerifylprdataLambdaVersionUsOQI86eHJPM2QNEdvfLpDfmLDoirNHMRG5pesOGKU": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "VerifylprdataLambdaFunction"
+            },
+            "CodeSha256": "eyGgZJK7rIYDLEogxyw4TFQgCtVLNFTgcSJ9GsoYMf8="
+          }
+        },
+        "ProcesslprdataEventSourceMappingSQSLprProcessingQueue": {
+          "Type": "AWS::Lambda::EventSourceMapping",
+          "DependsOn": [
+            "IamRoleLambdaExecution"
+          ],
+          "Properties": {
+            "BatchSize": 1,
+            "EventSourceArn": {
+              "Fn::GetAtt": [
+                "LprProcessingQueue",
+                "Arn"
+              ]
+            },
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "ProcesslprdataLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Enabled": true
+          }
+        },
+        "VerifylprdataEventSourceMappingSQSLprParseAndStoreCompletedQueue": {
+          "Type": "AWS::Lambda::EventSourceMapping",
+          "DependsOn": [
+            "IamRoleLambdaExecution"
+          ],
+          "Properties": {
+            "BatchSize": 1,
+            "EventSourceArn": {
+              "Fn::GetAtt": [
+                "LprParseAndStoreCompletedQueue",
+                "Arn"
+              ]
+            },
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "VerifylprdataLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Enabled": true
+          }
+        },
+        "LprProcessingQueue": {
+          "Type": "AWS::SQS::Queue",
+          "Properties": {
+            "QueueName": "lpr-processing-queue"
+          }
+        },
+        "S3ToSqsPolicy": {
+          "Type": "AWS::SQS::QueuePolicy",
+          "Properties": {
+            "Queues": [
+              {
+                "Ref": "LprProcessingQueue"
+              }
+            ],
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": "s3.amazonaws.com"
+                  },
+                  "Action": "SQS:SendMessage",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "LprProcessingQueue",
+                      "Arn"
+                    ]
+                  },
+                  "Condition": {
+                    "ArnLike": {
+                      "aws:SourceArn": "arn:aws:s3:::lpringestionservice-dev-s3bucket-q9nhy6tnerz6"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "LprDataTable": {
+          "Type": "AWS::DynamoDB::Table",
+          "Properties": {
+            "TableName": "LprDataTable",
+            "AttributeDefinitions": [
+              {
+                "AttributeName": "plate_read_id",
+                "AttributeType": "S"
+              },
+              {
+                "AttributeName": "plate_read_timestamp",
+                "AttributeType": "N"
+              },
+              {
+                "AttributeName": "days_since_epoch",
+                "AttributeType": "N"
+              }
+            ],
+            "KeySchema": [
+              {
+                "AttributeName": "plate_read_id",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "plate_read_timestamp",
+                "KeyType": "RANGE"
+              }
+            ],
+            "GlobalSecondaryIndexes": [
+              {
+                "IndexName": "DaysSinceEpochIndex",
+                "KeySchema": [
+                  {
+                    "AttributeName": "days_since_epoch",
+                    "KeyType": "HASH"
+                  },
+                  {
+                    "AttributeName": "plate_read_timestamp",
+                    "KeyType": "RANGE"
+                  }
+                ],
+                "Projection": {
+                  "ProjectionType": "ALL"
+                }
+              }
+            ],
+            "BillingMode": "PAY_PER_REQUEST",
+            "TimeToLiveSpecification": {
+              "AttributeName": "ttl",
+              "Enabled": true
+            }
+          }
+        },
+        "LprImageBucket": {
+          "Type": "AWS::S3::Bucket",
+          "Properties": {
+            "PublicAccessBlockConfiguration": {
+              "BlockPublicAcls": true,
+              "IgnorePublicAcls": true,
+              "BlockPublicPolicy": false,
+              "RestrictPublicBuckets": false
+            }
+          }
+        },
+        "LprImageBucketPolicy": {
+          "Type": "AWS::S3::BucketPolicy",
+          "Properties": {
+            "Bucket": {
+              "Ref": "LprImageBucket"
+            },
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Sid": "PublicReadGetObject",
+                  "Effect": "Allow",
+                  "Principal": "*",
+                  "Action": "s3:GetObject",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:s3:::",
+                        {
+                          "Ref": "LprImageBucket"
+                        },
+                        "/*"
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "LprParseAndStoreCompletedQueue": {
+          "Type": "AWS::SQS::Queue",
+          "Properties": {
+            "QueueName": "lpr-parse-and-store-completed"
+          }
+        }
+      },
+      "Outputs": {
+        "ServerlessDeploymentBucketName": {
+          "Value": "serverless-framework-deployments-us-east-1-1320e877-4315",
+          "Export": {
+            "Name": "sls-lprparseandverify-dev-ServerlessDeploymentBucketName"
+          }
+        },
+        "ProcesslprdataLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "ProcesslprdataLambdaVersionQLYlwHPUu30Haw9dryyYckeEC2vofJ2oVSyKJbyLTcA"
+          },
+          "Export": {
+            "Name": "sls-lprparseandverify-dev-ProcesslprdataLambdaFunctionQualifiedArn"
+          }
+        },
+        "VerifylprdataLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "VerifylprdataLambdaVersionUsOQI86eHJPM2QNEdvfLpDfmLDoirNHMRG5pesOGKU"
+          },
+          "Export": {
+            "Name": "sls-lprparseandverify-dev-VerifylprdataLambdaFunctionQualifiedArn"
+          }
+        }
+      }
+    }
   }
 }
