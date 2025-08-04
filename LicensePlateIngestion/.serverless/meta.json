@@ -1,0 +1,1348 @@
+{
+  "/mnt/c/repositories/Research/LicensePlateIngestion/serverless.yml": {
+    "versionFramework": "4.17.2",
+    "servicePath": "/mnt/c/repositories/Research/LicensePlateIngestion/serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "org": "pauleverton",
+      "app": "licenseplatevalidator",
+      "service": "lpringestionservice",
+      "provider": {
+        "name": "aws",
+        "runtime": "python3.12",
+        "iam": {
+          "role": {
+            "statements": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "firehose:PutRecord"
+                ],
+                "Resource": "arn:aws:firehose:*:*:deliverystream/LicensePlateDataStream"
+              }
+            ]
+          }
+        },
+        "stage": "dev",
+        "region": "us-east-1",
+        "versionFunctions": true,
+        "compiledCloudFormationTemplate": {
+          "AWSTemplateFormatVersion": "2010-09-09",
+          "Description": "The AWS CloudFormation template for this Serverless application",
+          "Resources": {
+            "ReceivelprdataLogGroup": {
+              "Type": "AWS::Logs::LogGroup",
+              "Properties": {
+                "LogGroupName": "/aws/lambda/lpringestionservice-dev-receivelprdata"
+              }
+            },
+            "IamRoleLambdaExecution": {
+              "Type": "AWS::IAM::Role",
+              "Properties": {
+                "AssumeRolePolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": {
+                        "Service": [
+                          "lambda.amazonaws.com"
+                        ]
+                      },
+                      "Action": [
+                        "sts:AssumeRole"
+                      ]
+                    }
+                  ]
+                },
+                "Policies": [
+                  {
+                    "PolicyName": {
+                      "Fn::Join": [
+                        "-",
+                        [
+                          "lpringestionservice",
+                          "dev",
+                          "lambda"
+                        ]
+                      ]
+                    },
+                    "PolicyDocument": {
+                      "Version": "2012-10-17",
+                      "Statement": [
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "logs:CreateLogStream",
+                            "logs:CreateLogGroup",
+                            "logs:TagResource"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpringestionservice-dev*:*"
+                            }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "logs:PutLogEvents"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpringestionservice-dev*:*:*"
+                            }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "firehose:PutRecord"
+                          ],
+                          "Resource": "arn:aws:firehose:*:*:deliverystream/LicensePlateDataStream"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "Path": "/",
+                "RoleName": {
+                  "Fn::Join": [
+                    "-",
+                    [
+                      "lpringestionservice",
+                      "dev",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "lambdaRole"
+                    ]
+                  ]
+                }
+              }
+            },
+            "ReceivelprdataLambdaFunction": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Code": {
+                  "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
+                  "S3Key": "serverless/lpringestionservice/dev/1754243702568-2025-08-03T17:55:02.568Z/lpringestionservice.zip"
+                },
+                "Handler": "receive_data_handler.receivelprdata",
+                "Runtime": "python3.12",
+                "FunctionName": "lpringestionservice-dev-receivelprdata",
+                "MemorySize": 1024,
+                "Timeout": 6,
+                "Role": {
+                  "Fn::GetAtt": [
+                    "IamRoleLambdaExecution",
+                    "Arn"
+                  ]
+                }
+              },
+              "DependsOn": [
+                "ReceivelprdataLogGroup"
+              ]
+            },
+            "ReceivelprdataLambdaVersionCLeWDoESpakCUsBbqepLqK2KCvv3EQVFdO4P9sIWBwo": {
+              "Type": "AWS::Lambda::Version",
+              "DeletionPolicy": "Retain",
+              "Properties": {
+                "FunctionName": {
+                  "Ref": "ReceivelprdataLambdaFunction"
+                },
+                "CodeSha256": "hFxeQG9s+WGn0LxNpmOwfaVPR54CP7qMInWwEcZKkpk="
+              }
+            },
+            "HttpApi": {
+              "Type": "AWS::ApiGatewayV2::Api",
+              "Properties": {
+                "Name": "dev-lpringestionservice",
+                "ProtocolType": "HTTP"
+              }
+            },
+            "HttpApiStage": {
+              "Type": "AWS::ApiGatewayV2::Stage",
+              "Properties": {
+                "ApiId": {
+                  "Ref": "HttpApi"
+                },
+                "StageName": "$default",
+                "AutoDeploy": true,
+                "DefaultRouteSettings": {
+                  "DetailedMetricsEnabled": false
+                }
+              }
+            },
+            "ReceivelprdataLambdaPermissionHttpApi": {
+              "Type": "AWS::Lambda::Permission",
+              "Properties": {
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "ReceivelprdataLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "apigateway.amazonaws.com",
+                "SourceArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":execute-api:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":",
+                      {
+                        "Ref": "HttpApi"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              }
+            },
+            "HttpApiIntegrationReceivelprdata": {
+              "Type": "AWS::ApiGatewayV2::Integration",
+              "Properties": {
+                "ApiId": {
+                  "Ref": "HttpApi"
+                },
+                "IntegrationType": "AWS_PROXY",
+                "IntegrationUri": {
+                  "Fn::GetAtt": [
+                    "ReceivelprdataLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "PayloadFormatVersion": "2.0",
+                "TimeoutInMillis": 30000
+              }
+            },
+            "HttpApiRoutePost": {
+              "Type": "AWS::ApiGatewayV2::Route",
+              "Properties": {
+                "ApiId": {
+                  "Ref": "HttpApi"
+                },
+                "RouteKey": "POST /",
+                "Target": {
+                  "Fn::Join": [
+                    "/",
+                    [
+                      "integrations",
+                      {
+                        "Ref": "HttpApiIntegrationReceivelprdata"
+                      }
+                    ]
+                  ]
+                }
+              },
+              "DependsOn": "HttpApiIntegrationReceivelprdata"
+            },
+            "LicensePlateDataStream": {
+              "Type": "AWS::KinesisFirehose::DeliveryStream",
+              "Properties": {
+                "DeliveryStreamName": "LicensePlateDataStream",
+                "S3DestinationConfiguration": {
+                  "BucketARN": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:s3:::",
+                        {
+                          "Ref": "S3Bucket"
+                        }
+                      ]
+                    ]
+                  },
+                  "RoleARN": {
+                    "Fn::GetAtt": [
+                      "FirehoseToS3Role",
+                      "Arn"
+                    ]
+                  }
+                }
+              }
+            },
+            "S3Bucket": {
+              "Type": "AWS::S3::Bucket"
+            },
+            "FirehoseToS3Role": {
+              "Type": "AWS::IAM::Role",
+              "Properties": {
+                "AssumeRolePolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": {
+                        "Service": [
+                          "firehose.amazonaws.com"
+                        ]
+                      },
+                      "Action": [
+                        "sts:AssumeRole"
+                      ]
+                    }
+                  ]
+                },
+                "Policies": [
+                  {
+                    "PolicyName": "firehose-s3-access",
+                    "PolicyDocument": {
+                      "Version": "2012-10-17",
+                      "Statement": [
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "s3:AbortMultipartUpload",
+                            "s3:GetBucketLocation",
+                            "s3:GetObject",
+                            "s3:ListBucket",
+                            "s3:ListBucketMultipartUploads",
+                            "s3:PutObject"
+                          ],
+                          "Resource": [
+                            {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  "arn:aws:s3:::",
+                                  {
+                                    "Ref": "S3Bucket"
+                                  }
+                                ]
+                              ]
+                            },
+                            {
+                              "Fn::Join": [
+                                "",
+                                [
+                                  "arn:aws:s3:::",
+                                  {
+                                    "Ref": "S3Bucket"
+                                  },
+                                  "/*"
+                                ]
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "Outputs": {
+            "ServerlessDeploymentBucketName": {
+              "Value": "serverless-framework-deployments-us-east-1-1320e877-4315",
+              "Export": {
+                "Name": "sls-lpringestionservice-dev-ServerlessDeploymentBucketName"
+              }
+            },
+            "ReceivelprdataLambdaFunctionQualifiedArn": {
+              "Description": "Current Lambda function version",
+              "Value": {
+                "Ref": "ReceivelprdataLambdaVersionCLeWDoESpakCUsBbqepLqK2KCvv3EQVFdO4P9sIWBwo"
+              },
+              "Export": {
+                "Name": "sls-lpringestionservice-dev-ReceivelprdataLambdaFunctionQualifiedArn"
+              }
+            },
+            "HttpApiId": {
+              "Description": "Id of the HTTP API",
+              "Value": {
+                "Ref": "HttpApi"
+              },
+              "Export": {
+                "Name": "sls-lpringestionservice-dev-HttpApiId"
+              }
+            },
+            "HttpApiUrl": {
+              "Description": "URL of the HTTP API",
+              "Value": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "https://",
+                    {
+                      "Ref": "HttpApi"
+                    },
+                    ".execute-api.",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ".",
+                    {
+                      "Ref": "AWS::URLSuffix"
+                    }
+                  ]
+                ]
+              },
+              "Export": {
+                "Name": "sls-lpringestionservice-dev-HttpApiUrl"
+              }
+            }
+          }
+        },
+        "vpc": {}
+      },
+      "functions": {
+        "receivelprdata": {
+          "handler": "receive_data_handler.receivelprdata",
+          "events": [
+            {
+              "httpApi": {
+                "path": "/",
+                "method": "post"
+              },
+              "resolvedMethod": "POST",
+              "resolvedPath": "/"
+            }
+          ],
+          "name": "lpringestionservice-dev-receivelprdata",
+          "package": {},
+          "memory": 1024,
+          "timeout": 6,
+          "runtime": "python3.12",
+          "vpc": {},
+          "versionLogicalId": "ReceivelprdataLambdaVersionCLeWDoESpakCUsBbqepLqK2KCvv3EQVFdO4P9sIWBwo"
+        }
+      },
+      "resources": {
+        "Resources": {
+          "LicensePlateDataStream": {
+            "Type": "AWS::KinesisFirehose::DeliveryStream",
+            "Properties": {
+              "DeliveryStreamName": "LicensePlateDataStream",
+              "S3DestinationConfiguration": {
+                "BucketARN": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "S3Bucket"
+                      }
+                    ]
+                  ]
+                },
+                "RoleARN": {
+                  "Fn::GetAtt": [
+                    "FirehoseToS3Role",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          },
+          "S3Bucket": {
+            "Type": "AWS::S3::Bucket"
+          },
+          "FirehoseToS3Role": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "firehose.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": "firehose-s3-access",
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "s3:AbortMultipartUpload",
+                          "s3:GetBucketLocation",
+                          "s3:GetObject",
+                          "s3:ListBucket",
+                          "s3:ListBucketMultipartUploads",
+                          "s3:PutObject"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Join": [
+                              "",
+                              [
+                                "arn:aws:s3:::",
+                                {
+                                  "Ref": "S3Bucket"
+                                }
+                              ]
+                            ]
+                          },
+                          {
+                            "Fn::Join": [
+                              "",
+                              [
+                                "arn:aws:s3:::",
+                                {
+                                  "Ref": "S3Bucket"
+                                },
+                                "/*"
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "Outputs": {}
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "python3.12",
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "firehose:PutRecord"
+              ],
+              "Resource": "arn:aws:firehose:*:*:deliverystream/LicensePlateDataStream"
+            }
+          ]
+        }
+      },
+      "stage": "dev",
+      "region": "us-east-1",
+      "versionFunctions": true,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ReceivelprdataLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/lpringestionservice-dev-receivelprdata"
+            }
+          },
+          "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "lpringestionservice",
+                        "dev",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup",
+                          "logs:TagResource"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpringestionservice-dev*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpringestionservice-dev*:*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "firehose:PutRecord"
+                        ],
+                        "Resource": "arn:aws:firehose:*:*:deliverystream/LicensePlateDataStream"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "lpringestionservice",
+                    "dev",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "lambdaRole"
+                  ]
+                ]
+              }
+            }
+          },
+          "ReceivelprdataLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
+                "S3Key": "serverless/lpringestionservice/dev/1754243702568-2025-08-03T17:55:02.568Z/lpringestionservice.zip"
+              },
+              "Handler": "receive_data_handler.receivelprdata",
+              "Runtime": "python3.12",
+              "FunctionName": "lpringestionservice-dev-receivelprdata",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "ReceivelprdataLogGroup"
+            ]
+          },
+          "ReceivelprdataLambdaVersionCLeWDoESpakCUsBbqepLqK2KCvv3EQVFdO4P9sIWBwo": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "ReceivelprdataLambdaFunction"
+              },
+              "CodeSha256": "hFxeQG9s+WGn0LxNpmOwfaVPR54CP7qMInWwEcZKkpk="
+            }
+          },
+          "HttpApi": {
+            "Type": "AWS::ApiGatewayV2::Api",
+            "Properties": {
+              "Name": "dev-lpringestionservice",
+              "ProtocolType": "HTTP"
+            }
+          },
+          "HttpApiStage": {
+            "Type": "AWS::ApiGatewayV2::Stage",
+            "Properties": {
+              "ApiId": {
+                "Ref": "HttpApi"
+              },
+              "StageName": "$default",
+              "AutoDeploy": true,
+              "DefaultRouteSettings": {
+                "DetailedMetricsEnabled": false
+              }
+            }
+          },
+          "ReceivelprdataLambdaPermissionHttpApi": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "ReceivelprdataLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "HttpApi"
+                    },
+                    "/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "HttpApiIntegrationReceivelprdata": {
+            "Type": "AWS::ApiGatewayV2::Integration",
+            "Properties": {
+              "ApiId": {
+                "Ref": "HttpApi"
+              },
+              "IntegrationType": "AWS_PROXY",
+              "IntegrationUri": {
+                "Fn::GetAtt": [
+                  "ReceivelprdataLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "PayloadFormatVersion": "2.0",
+              "TimeoutInMillis": 30000
+            }
+          },
+          "HttpApiRoutePost": {
+            "Type": "AWS::ApiGatewayV2::Route",
+            "Properties": {
+              "ApiId": {
+                "Ref": "HttpApi"
+              },
+              "RouteKey": "POST /",
+              "Target": {
+                "Fn::Join": [
+                  "/",
+                  [
+                    "integrations",
+                    {
+                      "Ref": "HttpApiIntegrationReceivelprdata"
+                    }
+                  ]
+                ]
+              }
+            },
+            "DependsOn": "HttpApiIntegrationReceivelprdata"
+          },
+          "LicensePlateDataStream": {
+            "Type": "AWS::KinesisFirehose::DeliveryStream",
+            "Properties": {
+              "DeliveryStreamName": "LicensePlateDataStream",
+              "S3DestinationConfiguration": {
+                "BucketARN": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "S3Bucket"
+                      }
+                    ]
+                  ]
+                },
+                "RoleARN": {
+                  "Fn::GetAtt": [
+                    "FirehoseToS3Role",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          },
+          "S3Bucket": {
+            "Type": "AWS::S3::Bucket"
+          },
+          "FirehoseToS3Role": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "firehose.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": "firehose-s3-access",
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "s3:AbortMultipartUpload",
+                          "s3:GetBucketLocation",
+                          "s3:GetObject",
+                          "s3:ListBucket",
+                          "s3:ListBucketMultipartUploads",
+                          "s3:PutObject"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Join": [
+                              "",
+                              [
+                                "arn:aws:s3:::",
+                                {
+                                  "Ref": "S3Bucket"
+                                }
+                              ]
+                            ]
+                          },
+                          {
+                            "Fn::Join": [
+                              "",
+                              [
+                                "arn:aws:s3:::",
+                                {
+                                  "Ref": "S3Bucket"
+                                },
+                                "/*"
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": "serverless-framework-deployments-us-east-1-1320e877-4315",
+            "Export": {
+              "Name": "sls-lpringestionservice-dev-ServerlessDeploymentBucketName"
+            }
+          },
+          "ReceivelprdataLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "ReceivelprdataLambdaVersionCLeWDoESpakCUsBbqepLqK2KCvv3EQVFdO4P9sIWBwo"
+            },
+            "Export": {
+              "Name": "sls-lpringestionservice-dev-ReceivelprdataLambdaFunctionQualifiedArn"
+            }
+          },
+          "HttpApiId": {
+            "Description": "Id of the HTTP API",
+            "Value": {
+              "Ref": "HttpApi"
+            },
+            "Export": {
+              "Name": "sls-lpringestionservice-dev-HttpApiId"
+            }
+          },
+          "HttpApiUrl": {
+            "Description": "URL of the HTTP API",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "https://",
+                  {
+                    "Ref": "HttpApi"
+                  },
+                  ".execute-api.",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ".",
+                  {
+                    "Ref": "AWS::URLSuffix"
+                  }
+                ]
+              ]
+            },
+            "Export": {
+              "Name": "sls-lpringestionservice-dev-HttpApiUrl"
+            }
+          }
+        }
+      },
+      "vpc": {}
+    },
+    "dashboard": {
+      "isEnabledForService": true,
+      "requiredAuthentication": false,
+      "orgFeaturesInUse": {
+        "providers": true,
+        "monitoring": false
+      },
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": "M22Zh9Qm6FNh4FDwlZ",
+      "serviceProvider": {
+        "accessKeyId": "<REDACTED>",
+        "secretAccessKey": "<REDACTED>",
+        "sessionToken": "<REDACTED>",
+        "$source": {
+          "CREDENTIALS_CODE": "<REDACTED>"
+        }
+      },
+      "instanceParameters": null
+    },
+    "serviceRawFile": "# \"org\" ensures this Service is used with the correct Serverless Framework Access Key.\norg: pauleverton\n# \"app\" enables Serverless Framework Dashboard features and sharing them with other Services.\napp: licenseplatevalidator\nservice: lpringestionservice\n\nprovider:\n  name: aws\n  runtime: python3.12\n  iam:\n    role:\n      statements:\n        - Effect: \"Allow\"\n          Action:\n            - \"firehose:PutRecord\"\n          Resource:\n            - \"arn:aws:firehose:*:*:deliverystream/LicensePlateDataStream\" # Replace with your Firehose ARN\n\nfunctions:\n  receivelprdata:\n    handler: receive_data_handler.receivelprdata\n    events:\n      - httpApi:\n          path: /\n          method: post\n\nresources:\n  Resources:\n    LicensePlateDataStream:\n      Type: AWS::KinesisFirehose::DeliveryStream\n      Properties:\n        DeliveryStreamName: LicensePlateDataStream\n        S3DestinationConfiguration:\n          BucketARN: { \"Fn::Join\": [\"\", [\"arn:aws:s3:::\", { \"Ref\": \"S3Bucket\" } ] ] }\n          RoleARN: { \"Fn::GetAtt\": [\"FirehoseToS3Role\", \"Arn\"] }\n    S3Bucket:\n      Type: AWS::S3::Bucket\n    FirehoseToS3Role:\n      Type: AWS::IAM::Role\n      Properties:\n        AssumeRolePolicyDocument:\n          Version: '2012-10-17'\n          Statement:\n            - Effect: Allow\n              Principal:\n                Service:\n                  - firehose.amazonaws.com\n              Action:\n                - sts:AssumeRole\n        Policies:\n          - PolicyName: firehose-s3-access\n            PolicyDocument:\n              Version: '2012-10-17'\n              Statement:\n                - Effect: Allow\n                  Action:\n                    - s3:AbortMultipartUpload\n                    - s3:GetBucketLocation\n                    - s3:GetObject\n                    - s3:ListBucket\n                    - s3:ListBucketMultipartUploads\n                    - s3:PutObject\n                  Resource:\n                    - { \"Fn::Join\": [\"\", [\"arn:aws:s3:::\", { \"Ref\": \"S3Bucket\" } ] ] }\n                    - { \"Fn::Join\": [\"\", [\"arn:aws:s3:::\", { \"Ref\": \"S3Bucket\" }, \"/*\"] ] }\n",
+    "command": [
+      "deploy"
+    ],
+    "options": {},
+    "orgId": "12513851-0f00-4616-8ca5-4e5a553cc67d",
+    "orgName": "pauleverton",
+    "userId": "PyTX8YthJhRRyv4jLM",
+    "userName": "pauleverton",
+    "serviceProviderAwsAccountId": "877174350179",
+    "serviceProviderAwsCfStackName": "lpringestionservice-dev",
+    "serviceProviderAwsCfStackId": "arn:aws:cloudformation:us-east-1:877174350179:stack/lpringestionservice-dev/3141d720-7092-11f0-b9c3-0affc498927f",
+    "serviceProviderAwsCfStackCreated": "2025-08-03T17:49:24.364Z",
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": "CREATE_COMPLETE",
+    "serviceProviderAwsCfStackOutputs": [
+      {
+        "OutputKey": "ReceivelprdataLambdaFunctionQualifiedArn",
+        "OutputValue": "arn:aws:lambda:us-east-1:877174350179:function:lpringestionservice-dev-receivelprdata:1",
+        "Description": "Current Lambda function version",
+        "ExportName": "sls-lpringestionservice-dev-ReceivelprdataLambdaFunctionQualifiedArn"
+      },
+      {
+        "OutputKey": "HttpApiId",
+        "OutputValue": "68ezlbgzw0",
+        "Description": "Id of the HTTP API",
+        "ExportName": "sls-lpringestionservice-dev-HttpApiId"
+      },
+      {
+        "OutputKey": "ServerlessDeploymentBucketName",
+        "OutputValue": "serverless-framework-deployments-us-east-1-1320e877-4315",
+        "ExportName": "sls-lpringestionservice-dev-ServerlessDeploymentBucketName"
+      },
+      {
+        "OutputKey": "HttpApiUrl",
+        "OutputValue": "https://68ezlbgzw0.execute-api.us-east-1.amazonaws.com",
+        "Description": "URL of the HTTP API",
+        "ExportName": "sls-lpringestionservice-dev-HttpApiUrl"
+      }
+    ],
+    "compiledCloudFormationTemplate": {
+      "AWSTemplateFormatVersion": "2010-09-09",
+      "Description": "The AWS CloudFormation template for this Serverless application",
+      "Resources": {
+        "ReceivelprdataLogGroup": {
+          "Type": "AWS::Logs::LogGroup",
+          "Properties": {
+            "LogGroupName": "/aws/lambda/lpringestionservice-dev-receivelprdata"
+          }
+        },
+        "IamRoleLambdaExecution": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": [
+                      "lambda.amazonaws.com"
+                    ]
+                  },
+                  "Action": [
+                    "sts:AssumeRole"
+                  ]
+                }
+              ]
+            },
+            "Policies": [
+              {
+                "PolicyName": {
+                  "Fn::Join": [
+                    "-",
+                    [
+                      "lpringestionservice",
+                      "dev",
+                      "lambda"
+                    ]
+                  ]
+                },
+                "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "logs:CreateLogStream",
+                        "logs:CreateLogGroup",
+                        "logs:TagResource"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpringestionservice-dev*:*"
+                        }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "logs:PutLogEvents"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lpringestionservice-dev*:*:*"
+                        }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "firehose:PutRecord"
+                      ],
+                      "Resource": "arn:aws:firehose:*:*:deliverystream/LicensePlateDataStream"
+                    }
+                  ]
+                }
+              }
+            ],
+            "Path": "/",
+            "RoleName": {
+              "Fn::Join": [
+                "-",
+                [
+                  "lpringestionservice",
+                  "dev",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "lambdaRole"
+                ]
+              ]
+            }
+          }
+        },
+        "ReceivelprdataLambdaFunction": {
+          "Type": "AWS::Lambda::Function",
+          "Properties": {
+            "Code": {
+              "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
+              "S3Key": "serverless/lpringestionservice/dev/1754243702568-2025-08-03T17:55:02.568Z/lpringestionservice.zip"
+            },
+            "Handler": "receive_data_handler.receivelprdata",
+            "Runtime": "python3.12",
+            "FunctionName": "lpringestionservice-dev-receivelprdata",
+            "MemorySize": 1024,
+            "Timeout": 6,
+            "Role": {
+              "Fn::GetAtt": [
+                "IamRoleLambdaExecution",
+                "Arn"
+              ]
+            }
+          },
+          "DependsOn": [
+            "ReceivelprdataLogGroup"
+          ]
+        },
+        "ReceivelprdataLambdaVersionCLeWDoESpakCUsBbqepLqK2KCvv3EQVFdO4P9sIWBwo": {
+          "Type": "AWS::Lambda::Version",
+          "DeletionPolicy": "Retain",
+          "Properties": {
+            "FunctionName": {
+              "Ref": "ReceivelprdataLambdaFunction"
+            },
+            "CodeSha256": "hFxeQG9s+WGn0LxNpmOwfaVPR54CP7qMInWwEcZKkpk="
+          }
+        },
+        "HttpApi": {
+          "Type": "AWS::ApiGatewayV2::Api",
+          "Properties": {
+            "Name": "dev-lpringestionservice",
+            "ProtocolType": "HTTP"
+          }
+        },
+        "HttpApiStage": {
+          "Type": "AWS::ApiGatewayV2::Stage",
+          "Properties": {
+            "ApiId": {
+              "Ref": "HttpApi"
+            },
+            "StageName": "$default",
+            "AutoDeploy": true,
+            "DefaultRouteSettings": {
+              "DetailedMetricsEnabled": false
+            }
+          }
+        },
+        "ReceivelprdataLambdaPermissionHttpApi": {
+          "Type": "AWS::Lambda::Permission",
+          "Properties": {
+            "FunctionName": {
+              "Fn::GetAtt": [
+                "ReceivelprdataLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  {
+                    "Ref": "AWS::Partition"
+                  },
+                  ":execute-api:",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ":",
+                  {
+                    "Ref": "AWS::AccountId"
+                  },
+                  ":",
+                  {
+                    "Ref": "HttpApi"
+                  },
+                  "/*"
+                ]
+              ]
+            }
+          }
+        },
+        "HttpApiIntegrationReceivelprdata": {
+          "Type": "AWS::ApiGatewayV2::Integration",
+          "Properties": {
+            "ApiId": {
+              "Ref": "HttpApi"
+            },
+            "IntegrationType": "AWS_PROXY",
+            "IntegrationUri": {
+              "Fn::GetAtt": [
+                "ReceivelprdataLambdaFunction",
+                "Arn"
+              ]
+            },
+            "PayloadFormatVersion": "2.0",
+            "TimeoutInMillis": 30000
+          }
+        },
+        "HttpApiRoutePost": {
+          "Type": "AWS::ApiGatewayV2::Route",
+          "Properties": {
+            "ApiId": {
+              "Ref": "HttpApi"
+            },
+            "RouteKey": "POST /",
+            "Target": {
+              "Fn::Join": [
+                "/",
+                [
+                  "integrations",
+                  {
+                    "Ref": "HttpApiIntegrationReceivelprdata"
+                  }
+                ]
+              ]
+            }
+          },
+          "DependsOn": "HttpApiIntegrationReceivelprdata"
+        },
+        "LicensePlateDataStream": {
+          "Type": "AWS::KinesisFirehose::DeliveryStream",
+          "Properties": {
+            "DeliveryStreamName": "LicensePlateDataStream",
+            "S3DestinationConfiguration": {
+              "BucketARN": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "S3Bucket"
+                    }
+                  ]
+                ]
+              },
+              "RoleARN": {
+                "Fn::GetAtt": [
+                  "FirehoseToS3Role",
+                  "Arn"
+                ]
+              }
+            }
+          }
+        },
+        "S3Bucket": {
+          "Type": "AWS::S3::Bucket"
+        },
+        "FirehoseToS3Role": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": [
+                      "firehose.amazonaws.com"
+                    ]
+                  },
+                  "Action": [
+                    "sts:AssumeRole"
+                  ]
+                }
+              ]
+            },
+            "Policies": [
+              {
+                "PolicyName": "firehose-s3-access",
+                "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "s3:AbortMultipartUpload",
+                        "s3:GetBucketLocation",
+                        "s3:GetObject",
+                        "s3:ListBucket",
+                        "s3:ListBucketMultipartUploads",
+                        "s3:PutObject"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::Join": [
+                            "",
+                            [
+                              "arn:aws:s3:::",
+                              {
+                                "Ref": "S3Bucket"
+                              }
+                            ]
+                          ]
+                        },
+                        {
+                          "Fn::Join": [
+                            "",
+                            [
+                              "arn:aws:s3:::",
+                              {
+                                "Ref": "S3Bucket"
+                              },
+                              "/*"
+                            ]
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "Outputs": {
+        "ServerlessDeploymentBucketName": {
+          "Value": "serverless-framework-deployments-us-east-1-1320e877-4315",
+          "Export": {
+            "Name": "sls-lpringestionservice-dev-ServerlessDeploymentBucketName"
+          }
+        },
+        "ReceivelprdataLambdaFunctionQualifiedArn": {
+          "Description": "Current Lambda function version",
+          "Value": {
+            "Ref": "ReceivelprdataLambdaVersionCLeWDoESpakCUsBbqepLqK2KCvv3EQVFdO4P9sIWBwo"
+          },
+          "Export": {
+            "Name": "sls-lpringestionservice-dev-ReceivelprdataLambdaFunctionQualifiedArn"
+          }
+        },
+        "HttpApiId": {
+          "Description": "Id of the HTTP API",
+          "Value": {
+            "Ref": "HttpApi"
+          },
+          "Export": {
+            "Name": "sls-lpringestionservice-dev-HttpApiId"
+          }
+        },
+        "HttpApiUrl": {
+          "Description": "URL of the HTTP API",
+          "Value": {
+            "Fn::Join": [
+              "",
+              [
+                "https://",
+                {
+                  "Ref": "HttpApi"
+                },
+                ".execute-api.",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ".",
+                {
+                  "Ref": "AWS::URLSuffix"
+                }
+              ]
+            ]
+          },
+          "Export": {
+            "Name": "sls-lpringestionservice-dev-HttpApiUrl"
+          }
+        }
+      }
+    }
+  }
+}

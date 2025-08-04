@@ -1,0 +1,125 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: pauleverton
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: licenseplatevalidator
+service: lprparseandstoreservice
+
+provider:
+  name: aws
+  runtime: python3.12
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - "s3:GetObject"
+          Resource: "arn:aws:s3:::lpringestionservice-dev-s3bucket-q9nhy6tnerz6/*"
+        - Effect: "Allow"
+          Action:
+            - "sqs:ReceiveMessage"
+            - "sqs:DeleteMessage"
+            - "sqs:GetQueueAttributes"
+          Resource:
+            - Fn::GetAtt: [ LprProcessingQueue, Arn ]
+        - Effect: "Allow"
+          Action:
+            - "dynamodb:PutItem"
+          Resource:
+            - Fn::GetAtt: [ LprDataTable, Arn ]
+        - Effect: "Allow"
+          Action:
+            - "sqs:SendMessage"
+          Resource:
+            - Fn::GetAtt: [ LprParseAndStoreCompletedQueue, Arn ]
+        - Effect: "Allow"
+          Action:
+            - "s3:PutObject"
+          Resource:
+            - Fn::Join:
+              - ""
+              - - "arn:aws:s3:::"
+                - !Ref LprImageBucket
+                - "/*"
+  environment:
+    DYNAMODB_TABLE: !Ref LprDataTable
+    IMAGE_BUCKET_NAME: !Ref LprImageBucket
+    COMPLETED_QUEUE_URL: !Ref LprParseAndStoreCompletedQueue
+
+functions:
+  processlprdata:
+    handler: handler.receivelprdata
+    memorySize: 256
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - LprProcessingQueue
+              - Arn
+          batchSize: 1
+
+resources:
+  Resources:
+    LprProcessingQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: lpr-processing-queue
+    S3ToSqsPolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - Ref: LprProcessingQueue
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: "s3.amazonaws.com"
+              Action: SQS:SendMessage
+              Resource:
+                Fn::GetAtt: [ LprProcessingQueue, Arn ]
+              Condition:
+                ArnLike:
+                  aws:SourceArn: "arn:aws:s3:::lpringestionservice-dev-s3bucket-q9nhy6tnerz6"
+    LprDataTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: LprDataTable
+        AttributeDefinitions:
+          - AttributeName: plate_read_id
+            AttributeType: S
+          - AttributeName: plate_read_timestamp
+            AttributeType: N
+        KeySchema:
+          - AttributeName: plate_read_id
+            KeyType: HASH
+          - AttributeName: plate_read_timestamp
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    LprImageBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          IgnorePublicAcls: true
+          BlockPublicPolicy: false
+          RestrictPublicBuckets: false
+    LprImageBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref LprImageBucket
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: "*"
+              Action: s3:GetObject
+              Resource: !Join
+                - ""
+                - - "arn:aws:s3:::"
+                  - !Ref LprImageBucket
+                  - "/*"
+    LprParseAndStoreCompletedQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: lpr-parse-and-store-completed

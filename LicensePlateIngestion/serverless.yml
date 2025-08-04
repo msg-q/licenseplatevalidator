@@ -1,0 +1,68 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: pauleverton
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: licenseplatevalidator
+service: lpringestionservice
+
+provider:
+  name: aws
+  runtime: python3.12
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - "firehose:PutRecord"
+          Resource:
+            - "arn:aws:firehose:*:*:deliverystream/LicensePlateDataStream" # Replace with your Firehose ARN
+
+functions:
+  receivelprdata:
+    handler: receive_data_handler.receivelprdata
+    events:
+      - httpApi:
+          path: /
+          method: post
+
+resources:
+  Resources:
+    LicensePlateDataStream:
+      Type: AWS::KinesisFirehose::DeliveryStream
+      Properties:
+        DeliveryStreamName: LicensePlateDataStream
+        S3DestinationConfiguration:
+          BucketARN: { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref": "S3Bucket" } ] ] }
+          RoleARN: { "Fn::GetAtt": ["FirehoseToS3Role", "Arn"] }
+          BufferingHints:
+            SizeInMBs: 10
+            IntervalInSeconds: 300
+    S3Bucket:
+      Type: AWS::S3::Bucket
+    FirehoseToS3Role:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - firehose.amazonaws.com
+              Action:
+                - sts:AssumeRole
+        Policies:
+          - PolicyName: firehose-s3-access
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - s3:AbortMultipartUpload
+                    - s3:GetBucketLocation
+                    - s3:GetObject
+                    - s3:ListBucket
+                    - s3:ListBucketMultipartUploads
+                    - s3:PutObject
+                  Resource:
+                    - { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref": "S3Bucket" } ] ] }
+                    - { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref": "S3Bucket" }, "/*"] ] }

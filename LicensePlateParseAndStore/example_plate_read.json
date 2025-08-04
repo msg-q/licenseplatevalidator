@@ -1,0 +1,272 @@
+{
+    "data_type": "alpr_group",
+    "version": 3,
+    "epoch_start": 1754188918813,
+    "epoch_end": 1754188920493,
+    "frame_start": 2416509,
+    "frame_end": 2416529,
+    "company_id": "4767cc36-fa32-4920-a705-50fa6551d07f",
+    "agent_uid": "ABILITY-TRKR4000113",
+    "agent_version": "4.1.5",
+    "agent_type": "ability",
+    "camera_id": 1,
+    "gps_latitude": 25.7834549,
+    "gps_longitude": -80.18994904,
+    "country": "us",
+    "uuids": [
+        "ABILITY-TRKR4000113-1-1754188918813",
+        "ABILITY-TRKR4000113-1-1754188918975",
+        "ABILITY-TRKR4000113-1-1754188919059",
+        "ABILITY-TRKR4000113-1-1754188919226",
+        "ABILITY-TRKR4000113-1-1754188919504",
+        "ABILITY-TRKR4000113-1-1754188920162",
+        "ABILITY-TRKR4000113-1-1754188920493"
+    ],
+    "vehicle_path": [],
+    "plate_indexes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+    ],
+    "candidates": [
+        {
+            "plate": "KN085D",
+            "confidence": 90.86231232,
+            "matches_template": 0
+        },
+        {
+            "plate": "KND85D",
+            "confidence": 71.27511597,
+            "matches_template": 0
+        },
+        {
+            "plate": "KN08SD",
+            "confidence": 70.84300232,
+            "matches_template": 0
+        },
+        {
+            "plate": "KND850",
+            "confidence": 70.64574432,
+            "matches_template": 0
+        }
+    ],
+    "best_plate": {
+        "plate": "KN085D",
+        "confidence": 90.86231232,
+        "matches_template": 0,
+        "plate_index": 0,
+        "region": "us-fl",
+        "region_confidence": 100,
+        "processing_time_ms": 33.30899811,
+        "requested_topn": 10,
+        "coordinates": [
+            {
+                "x": 591,
+                "y": 471
+            },
+            {
+                "x": 669,
+                "y": 481
+            },
+            {
+                "x": 666,
+                "y": 518
+            },
+            {
+                "x": 588,
+                "y": 508
+            }
+        ],
+        "plate_crop_jpeg": "",
+        "vehicle_region": {
+            "x": 463,
+            "y": 215,
+            "width": 586,
+            "height": 430
+        },
+        "vehicle_detected": true,
+        "candidates": [
+            {
+                "plate": "KN085D",
+                "confidence": 90.86231232,
+                "matches_template": 0
+            },
+            {
+                "plate": "KN0850",
+                "confidence": 76.02132416,
+                "matches_template": 0
+            },
+            {
+                "plate": "KN086D",
+                "confidence": 75.7773819,
+                "matches_template": 0
+            },
+            {
+                "plate": "KN08D",
+                "confidence": 75.68582916,
+                "matches_template": 0
+            },
+            {
+                "plate": "KN08SD",
+                "confidence": 75.67851257,
+                "matches_template": 0
+            },
+            {
+                "plate": "KN85D",
+                "confidence": 75.67123413,
+                "matches_template": 0
+            },
+            {
+                "plate": "KNO85D",
+                "confidence": 75.62312317,
+                "matches_template": 0
+            },
+            {
+                "plate": "KNQ85D",
+                "confidence": 75.49427795,
+                "matches_template": 0
+            },
+            {
+                "plate": "KN0860",
+                "confidence": 60.93640137,
+                "matches_template": 0
+            },
+            {
+                "plate": "KN080",
+                "confidence": 60.84484482,
+                "matches_template": 0
+            }
+        ]
+    },
+    "best_confidence": 90.86231232,
+    "best_plate_number": "KN085D",
+    "best_region": "us-fl",
+    "best_region_confidence": 100,
+    "matches_template": false,
+    "plate_path": [
+        {
+            "x": 453,
+            "y": 586,
+            "w": 85,
+            "h": 64,
+            "t": 0,
+            "f": 0
+        },
+        {
+            "x": 545,
+            "y": 511,
+            "w": 80,
+            "h": 51,
+            "t": 162,
+            "f": 2
+        },
+        {
+            "x": 591,
+            "y": 471,
+            "w": 75,
+            "h": 47,
+            "t": 246,
+            "f": 3
+        },
+        {
+            "x": 657,
+            "y": 410,
+            "w": 70,
+            "h": 41,
+            "t": 414,
+            "f": 5
+        },
+        {
+            "x": 742,
+            "y": 336,
+            "w": 64,
+            "h": 38,
+            "t": 691,
+            "f": 8
+        },
+        {
+            "x": 870,
+            "y": 227,
+            "w": 46,
+            "h": 22,
+            "t": 1349,
+            "f": 16
+        },
+        {
+            "x": 913,
+            "y": 195,
+            "w": 40,
+            "h": 19,
+            "t": 1680,
+            "f": 20
+        }
+    ],
+    "vehicle_crop_jpeg": "",
+    "best_uuid": "ABILITY-TRKR4000113-1-1754188919059",
+    "best_uuid_epoch_ms": 1754188919059,
+    "best_image_width": 1280,
+    "best_image_height": 720,
+    "travel_direction": 46.56082153,
+    "is_parked": false,
+    "is_preview": false,
+    "vehicle_signature": "",
+    "vehicle": {
+        "color": [
+            {
+                "name": "black",
+                "confidence": 91.94335938
+            }
+        ],
+        "make": [
+            {
+                "name": "bmw",
+                "confidence": 100
+            }
+        ],
+        "make_model": [
+            {
+                "name": "bmw_3-series",
+                "confidence": 63.13476562
+            }
+        ],
+        "body_type": [
+            {
+                "name": "sedan-standard",
+                "confidence": 100
+            }
+        ],
+        "year": [
+            {
+                "name": "2010-2014",
+                "confidence": 62.74414062
+            }
+        ],
+        "orientation": [
+            {
+                "name": "135",
+                "confidence": 99.51171875
+            }
+        ],
+        "missing_plate": [
+            {
+                "name": "no",
+                "confidence": 100
+            }
+        ],
+        "is_vehicle": [
+            {
+                "name": "yes",
+                "confidence": 100
+            }
+        ]
+    },
+    "web_server_config": {
+        "camera_label": "900 Garage Gate Entrance",
+        "agent_label": "EdgePro"
+    },
+    "direction_of_travel_id": -1
+}
