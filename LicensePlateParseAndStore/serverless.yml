@@ -24,6 +24,8 @@ provider:
         - Effect: "Allow"
           Action:
             - "dynamodb:PutItem"
+            - "dynamodb:UpdateItem"
+            - "dynamodb:Query"
           Resource:
             - Fn::GetAtt: [ LprDataTable, Arn ]
         - Effect: "Allow"
@@ -47,13 +49,24 @@ provider:
 
 functions:
   processlprdata:
-    handler: handler.receivelprdata
+    handler: parsehandlers.receivelprdata
     memorySize: 256
     events:
       - sqs:
           arn:
             Fn::GetAtt:
               - LprProcessingQueue
+              - Arn
+          batchSize: 1
+
+  verifylprdata:
+    handler: verifyhandlers.verifylprdata
+    memorySize: 256
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - LprParseAndStoreCompletedQueue
               - Arn
           batchSize: 1
 
