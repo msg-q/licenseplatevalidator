@@ -2,6 +2,6 @@ Requirements
 
 "serverless deploy" all repos
 
-Manually connect S3 bucket to the queue that LicensePlateParseAndStore created and listens to
+Go the the Ingestion S3 bucket and add an event for files created to go to the queue lpr-processing-queue
 
 
