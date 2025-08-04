@@ -154,7 +154,8 @@ def verifylprdata(event, context):
                                     'best_region': best_region,
                                     'days_since_epoch': getDaysSinceEpoch(),
                                     'plate_crop_jpeg_url': plate_crop_jpeg_url,
-                                    'vehicle_crop_jpeg_url': vehicle_crop_jpeg_url
+                                    'vehicle_crop_jpeg_url': vehicle_crop_jpeg_url,
+                                    'revenue_received': 0
                                 }
 
                                 # Remove keys with None values before inserting into DynamoDB
@@ -166,10 +167,69 @@ def verifylprdata(event, context):
                                 # If a plate did not go through valet and is_registered is FALSE, it should be sent to security.
                                 logger.info(f"Plate '{best_plate_number}' NOT seen at valet. Sending to security.")
 
+                    # Process the garage exits to figure out how much money revenue we should be getting.
                     if camera_label == '900 Garage Gate Exit':
                         logger.info("Plate seen exiting.")
                         
-                        #TODO: Download all plates from the valet_table for the last 30 days. Use getDaysSinceEpoch and go back 30 
+                        # Download all plates from the valet_table for the last 30 days where revenue has not been received.
+                        current_day = getDaysSinceEpoch()
+                        unpaid_plates = []
+                        for i in range(30):
+                            day_to_check = current_day - i
+                            response = valet_table.query(
+                                IndexName='DaysSinceEpochIndex',
+                                KeyConditionExpression=Key('days_since_epoch').eq(day_to_check) & Key('revenue_received').eq(0)
+                            )
+                            unpaid_plates.extend(response.get('Items', []))
+                        
+                        logger.info(f"Found {len(unpaid_plates)} unpaid plates in the last 30 days.")
+
+                        # Check if the exiting plate matches any of the unpaid plates.
+                        matched_plate = None
+                        for plate in unpaid_plates:
+                            if clean_levenshtein(plate.get('best_plate_number'), best_plate_number) <= 1:
+                                matched_plate = plate
+                                break
+                        
+                        if matched_plate:
+                            logger.info(f"MATCH FOUND: Exiting plate '{best_plate_number}' matches unpaid plate '{matched_plate.get('best_plate_number')}'.")
+                            
+                            # Calculate the time difference in hours.
+                            entry_timestamp = matched_plate.get('plate_read_timestamp')
+                            exit_timestamp = plate_read_timestamp
+                            duration_ms = exit_timestamp - entry_timestamp
+                            duration_hours = duration_ms / (1000 * 60 * 60)
+                            
+                            charge = 0
+                            if duration_hours % 24 > 0:
+                                charge = (duration_hours % 24) * 36
+                                duration_hours = duration_hours % 24
+
+                            # Calculate the charge based on valet rates.
+                            if duration_hours <= 2:
+                                charge += 15
+                            elif duration_hours <= 8:
+                                charge += 20
+                            elif duration_hours <= 12:
+                                charge += 24
+                            elif duration_hours <= 24:
+                                charge += 36
+                            
+                            # Update the record in the valet_table.
+                            valet_table.update_item(
+                                Key={
+                                    'plate_read_id': matched_plate.get('plate_read_id'),
+                                    'plate_read_timestamp': matched_plate.get('plate_read_timestamp')
+                                },
+                                UpdateExpression="set revenue_received = :r",
+                                ExpressionAttributeValues={
+                                    ':r': int(charge)
+                                },
+                                ReturnValues="UPDATED_NEW"
+                            )
+                            logger.info(f"Charged ${charge} for {duration_hours:.2f} hours.")
+                        else:
+                            logger.info(f"No unpaid valet record found for exiting plate '{best_plate_number}'.")
                 else:
                     logger.warning(f"No item found in DynamoDB for plate_read_id: {guid}")
 

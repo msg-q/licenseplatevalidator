@@ -148,7 +148,7 @@ resources:
             KeySchema:
               - AttributeName: days_since_epoch
                 KeyType: HASH
-              - AttributeName: plate_read_timestamp
+              - AttributeName: revenue_received
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
