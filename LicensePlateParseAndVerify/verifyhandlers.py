@@ -8,6 +8,7 @@ from boto3.dynamodb.conditions import Key
 dynamodb = boto3.resource('dynamodb')
 lpr_table = dynamodb.Table(os.environ['LPR_DYNAMODB_TABLE'])
 valet_table = dynamodb.Table(os.environ['VALET_DYNAMODB_TABLE'])
+registered_plate_tracker_table = dynamodb.Table(os.environ['REGISTERED_PLATE_TRACKER_TABLE'])
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -104,9 +105,16 @@ def verifylprdata(event, context):
 
                             if is_registered:
                                 logger.info(f"MATCH FOUND: Detected plate '{best_plate_number}' matches registered plate '{plate}'.")
-                                # Here you would add logic for what to do on a match,
-                                # like opening a gate or sending a notification.
-                                # For this example, we'll just log and break.
+                                
+                                # Update the count for the matched registered plate
+                                registered_plate_tracker_table.update_item(
+                                    Key={'plate_number': plate},
+                                    UpdateExpression="ADD seen_count :val SET last_seen_timestamp = :ts",
+                                    ExpressionAttributeValues={
+                                        ':val': 1,
+                                        ':ts': plate_read_timestamp
+                                    }
+                                )
                                 break
                         
                         if is_registered == False:

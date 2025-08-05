@@ -166,6 +166,22 @@
                 {
                   "Effect": "Allow",
                   "Action": [
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:GetItem"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "RegisteredPlateTrackerTable",
+                        "Arn"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
                     "sqs:SendMessage"
                   ],
                   "Resource": [
@@ -244,7 +260,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
-          "S3Key": "serverless/lprparseandverify/dev/1754351446003-2025-08-04T23:50:46.003Z/lprparseandverify.zip"
+          "S3Key": "serverless/lprparseandverify/dev/1754358631889-2025-08-05T01:50:31.889Z/lprparseandverify.zip"
         },
         "Handler": "parsehandlers.receivelprdata",
         "Runtime": "python3.12",
@@ -258,6 +274,9 @@
             },
             "VALET_DYNAMODB_TABLE": {
               "Ref": "ValetDataTable"
+            },
+            "REGISTERED_PLATE_TRACKER_TABLE": {
+              "Ref": "RegisteredPlateTrackerTable"
             },
             "IMAGE_BUCKET_NAME": {
               "Ref": "LprImageBucket"
@@ -283,7 +302,7 @@
       "Properties": {
         "Code": {
           "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
-          "S3Key": "serverless/lprparseandverify/dev/1754351446003-2025-08-04T23:50:46.003Z/lprparseandverify.zip"
+          "S3Key": "serverless/lprparseandverify/dev/1754358631889-2025-08-05T01:50:31.889Z/lprparseandverify.zip"
         },
         "Handler": "verifyhandlers.verifylprdata",
         "Runtime": "python3.12",
@@ -297,6 +316,9 @@
             },
             "VALET_DYNAMODB_TABLE": {
               "Ref": "ValetDataTable"
+            },
+            "REGISTERED_PLATE_TRACKER_TABLE": {
+              "Ref": "RegisteredPlateTrackerTable"
             },
             "IMAGE_BUCKET_NAME": {
               "Ref": "LprImageBucket"
@@ -317,24 +339,24 @@
         "VerifylprdataLogGroup"
       ]
     },
-    "ProcesslprdataLambdaVersionqbIrjO9sJE2ARwkg4hgYJx9wQHKbF8ozeLttu9HWM": {
+    "ProcesslprdataLambdaVersionv1Dpgvmm47WDRxttqfK9Mgc9YGXaHQpFpvGNkIq12iQ": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ProcesslprdataLambdaFunction"
         },
-        "CodeSha256": "c8eWRIcAfxMWLxM6dnmjWszv+/XSvaQ3JvY9zSc5xzE="
+        "CodeSha256": "eBHD8paVOIWa4fAKP5TuYo9srugwqlQJHVFMx0x5xhk="
       }
     },
-    "VerifylprdataLambdaVersionxY3elD9Etyu9PW43XsAZIyHkBKnNQ22srfd8XkKqq4": {
+    "VerifylprdataLambdaVersionnj2zV5mPstXjqLjgpyOjTKy7pd3QFfMe15oosjp444": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "VerifylprdataLambdaFunction"
         },
-        "CodeSha256": "c8eWRIcAfxMWLxM6dnmjWszv+/XSvaQ3JvY9zSc5xzE="
+        "CodeSha256": "eBHD8paVOIWa4fAKP5TuYo9srugwqlQJHVFMx0x5xhk="
       }
     },
     "ProcesslprdataEventSourceMappingSQSLprProcessingQueue": {
@@ -525,6 +547,25 @@
         "BillingMode": "PAY_PER_REQUEST"
       }
     },
+    "RegisteredPlateTrackerTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "RegisteredPlateTracker",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "plate_number",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "plate_number",
+            "KeyType": "HASH"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST"
+      }
+    },
     "LprImageBucket": {
       "Type": "AWS::S3::Bucket",
       "Properties": {
@@ -583,7 +624,7 @@
     "ProcesslprdataLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ProcesslprdataLambdaVersionqbIrjO9sJE2ARwkg4hgYJx9wQHKbF8ozeLttu9HWM"
+        "Ref": "ProcesslprdataLambdaVersionv1Dpgvmm47WDRxttqfK9Mgc9YGXaHQpFpvGNkIq12iQ"
       },
       "Export": {
         "Name": "sls-lprparseandverify-dev-ProcesslprdataLambdaFunctionQualifiedArn"
@@ -592,7 +633,7 @@
     "VerifylprdataLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "VerifylprdataLambdaVersionxY3elD9Etyu9PW43XsAZIyHkBKnNQ22srfd8XkKqq4"
+        "Ref": "VerifylprdataLambdaVersionnj2zV5mPstXjqLjgpyOjTKy7pd3QFfMe15oosjp444"
       },
       "Export": {
         "Name": "sls-lprparseandverify-dev-VerifylprdataLambdaFunctionQualifiedArn"

@@ -47,6 +47,13 @@ provider:
                 - 'DaysSinceEpochIndex'
         - Effect: "Allow"
           Action:
+            - "dynamodb:PutItem"
+            - "dynamodb:UpdateItem"
+            - "dynamodb:GetItem"
+          Resource:
+            - Fn::GetAtt: [ RegisteredPlateTrackerTable, Arn ]
+        - Effect: "Allow"
+          Action:
             - "sqs:SendMessage"
           Resource:
             - Fn::GetAtt: [ LprParseAndStoreCompletedQueue, Arn ]
@@ -62,6 +69,7 @@ provider:
   environment:
     LPR_DYNAMODB_TABLE: !Ref LprDataTable
     VALET_DYNAMODB_TABLE: !Ref ValetDataTable
+    REGISTERED_PLATE_TRACKER_TABLE: !Ref RegisteredPlateTrackerTable
     IMAGE_BUCKET_NAME: !Ref LprImageBucket
     COMPLETED_QUEUE_URL: !Ref LprParseAndStoreCompletedQueue
 
@@ -168,6 +176,17 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+    RegisteredPlateTrackerTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: RegisteredPlateTracker
+        AttributeDefinitions:
+          - AttributeName: plate_number
+            AttributeType: S
+        KeySchema:
+          - AttributeName: plate_number
+            KeyType: HASH
         BillingMode: PAY_PER_REQUEST
     LprImageBucket:
       Type: AWS::S3::Bucket
