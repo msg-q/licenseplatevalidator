@@ -316,7 +316,7 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
-                "S3Key": "serverless/lprparseandverify/dev/1754358631889-2025-08-05T01:50:31.889Z/lprparseandverify.zip"
+                "S3Key": "serverless/lprparseandverify/dev/1754427218915-2025-08-05T20:53:38.915Z/lprparseandverify.zip"
               },
               "Handler": "parsehandlers.receivelprdata",
               "Runtime": "python3.12",
@@ -358,7 +358,7 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "serverless-framework-deployments-us-east-1-1320e877-4315",
-                "S3Key": "serverless/lprparseandverify/dev/1754358631889-2025-08-05T01:50:31.889Z/lprparseandverify.zip"
+                "S3Key": "serverless/lprparseandverify/dev/1754427218915-2025-08-05T20:53:38.915Z/lprparseandverify.zip"
               },
               "Handler": "verifyhandlers.verifylprdata",
               "Runtime": "python3.12",
@@ -395,24 +395,24 @@
               "VerifylprdataLogGroup"
             ]
           },
-          "ProcesslprdataLambdaVersionv1Dpgvmm47WDRxttqfK9Mgc9YGXaHQpFpvGNkIq12iQ": {
+          "ProcesslprdataLambdaVersionQB74T1qtC3tYEcwkIwmKUnVWWpnpWNA6lkcsULst4dY": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "ProcesslprdataLambdaFunction"
               },
-              "CodeSha256": "eBHD8paVOIWa4fAKP5TuYo9srugwqlQJHVFMx0x5xhk="
+              "CodeSha256": "LQODTXIOS7aZnxz6IdSWI/RDbNgq/t4FkPXCFV2+4Rg="
             }
           },
-          "VerifylprdataLambdaVersionnj2zV5mPstXjqLjgpyOjTKy7pd3QFfMe15oosjp444": {
+          "VerifylprdataLambdaVersionZFitb3SQzApoE7E2wTusvwbYcY2afiAbAGB20chJnAw": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "VerifylprdataLambdaFunction"
               },
-              "CodeSha256": "eBHD8paVOIWa4fAKP5TuYo9srugwqlQJHVFMx0x5xhk="
+              "CodeSha256": "LQODTXIOS7aZnxz6IdSWI/RDbNgq/t4FkPXCFV2+4Rg="
             }
           },
           "ProcesslprdataEventSourceMappingSQSLprProcessingQueue": {
@@ -680,7 +680,7 @@
           "ProcesslprdataLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "ProcesslprdataLambdaVersionv1Dpgvmm47WDRxttqfK9Mgc9YGXaHQpFpvGNkIq12iQ"
+              "Ref": "ProcesslprdataLambdaVersionQB74T1qtC3tYEcwkIwmKUnVWWpnpWNA6lkcsULst4dY"
             },
             "Export": {
               "Name": "sls-lprparseandverify-dev-ProcesslprdataLambdaFunctionQualifiedArn"
@@ -689,7 +689,7 @@
           "VerifylprdataLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "VerifylprdataLambdaVersionnj2zV5mPstXjqLjgpyOjTKy7pd3QFfMe15oosjp444"
+              "Ref": "VerifylprdataLambdaVersionZFitb3SQzApoE7E2wTusvwbYcY2afiAbAGB20chJnAw"
             },
             "Export": {
               "Name": "sls-lprparseandverify-dev-VerifylprdataLambdaFunctionQualifiedArn"
@@ -720,7 +720,7 @@
         "timeout": 6,
         "runtime": "python3.12",
         "vpc": {},
-        "versionLogicalId": "ProcesslprdataLambdaVersionv1Dpgvmm47WDRxttqfK9Mgc9YGXaHQpFpvGNkIq12iQ"
+        "versionLogicalId": "ProcesslprdataLambdaVersionQB74T1qtC3tYEcwkIwmKUnVWWpnpWNA6lkcsULst4dY"
       },
       "verifylprdata": {
         "name": "lpr-verify",
@@ -741,7 +741,7 @@
         "timeout": 6,
         "runtime": "python3.12",
         "vpc": {},
-        "versionLogicalId": "VerifylprdataLambdaVersionnj2zV5mPstXjqLjgpyOjTKy7pd3QFfMe15oosjp444"
+        "versionLogicalId": "VerifylprdataLambdaVersionZFitb3SQzApoE7E2wTusvwbYcY2afiAbAGB20chJnAw"
       }
     },
     "resources": {
@@ -983,7 +983,7 @@
     "artifact": "/mnt/c/repositories/Research/licenseplatevalidator/LicensePlateParseAndVerify/.serverless/lprparseandverify.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/lprparseandverify/dev/1754358631889-2025-08-05T01:50:31.889Z",
+    "artifactDirectoryName": "serverless/lprparseandverify/dev/1754427218915-2025-08-05T20:53:38.915Z",
     "artifact": "lprparseandverify.zip"
   }
 }
